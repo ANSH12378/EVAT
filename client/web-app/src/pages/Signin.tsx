@@ -5,6 +5,7 @@ import { UserContext } from '../context/user';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import logo from '../assets/logo.png';
 
 type UserData = {
   id: string | number;
@@ -174,8 +175,8 @@ function Signin() {
     >
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <img
-          alt="Your Company"
-          src="../src/assets/logo.png"
+          alt="EVAT"
+          src={logo}
           className="mx-auto h-16 w-auto md:h-24"
         />
         <h2 className="mt-8 text-center text-2xl/9 font-bold tracking-tight text-surface-900">

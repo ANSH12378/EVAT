@@ -4,6 +4,7 @@ import { Mail, Eye, EyeOff, KeyRound, User, Phone } from 'lucide-react';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import logo from '../assets/logo.png';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const url = `${API_URL}/auth/register`;
@@ -175,8 +176,8 @@ function Signup() {
     >
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <img
-          alt="Your Company"
-          src="../src/assets/logo.png"
+          alt="EVAT"
+          src={logo}
           className="mx-auto h-16 w-auto md:h-24"
         />
         <h2 className="mt-8 text-center text-2xl/9 font-bold tracking-tight text-surface-900">
