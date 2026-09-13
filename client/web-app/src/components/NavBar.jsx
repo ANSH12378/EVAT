@@ -117,6 +117,10 @@ function NavBar() {
                                             onClick={() => handleNavigate('/cost-comparison')}>
                                                 Cost Comparison
                                             </button>
+                                            <button className={`dropdown-item ${isActive('/trip-confidence') ? 'dropdown-item-active' : ''}`}
+                                            onClick={() => handleNavigate('/trip-confidence')}>
+                                                Trip Confidence Score
+                                            </button>
                                             <button className={`dropdown-item ${isActive('/environmental-impact') ? 'dropdown-item-active' : ''}`}
                                             onClick={() => handleNavigate('/environmental-impact')}>
                                                 Environmental Impact
@@ -192,5 +196,3 @@ function NavBar() {
 }
 
 export default NavBar;
-
-

@@ -13,28 +13,25 @@ charging_station_recommendation_api/services/scoring.py combines factor
 scores into one ranking score.
 
 Design principle: any individual signal can fail independently (missing
-Google Maps API key, the reliability-scoring service not running, optional
-vehicle details not supplied) without failing the whole request. Each
-signal is computed defensively; only the signals that succeeded are
-included, and their weights are renormalised so the composite score always
-adds up to a meaningful 0-100 value instead of crashing or silently
-under-scoring every trip.
+Google Maps API key, no data for a given charger/postcode, optional vehicle
+details not supplied) without failing the whole request. Each signal is
+computed defensively; only the signals that succeeded are included, and
+their weights are renormalised so the composite score always adds up to a
+meaningful 0-100 value instead of crashing or silently under-scoring every
+trip.
 """
 
 from datetime import date as date_type
 from typing import Any, Dict, List, Optional
 
-import httpx
 from pydantic import BaseModel
 
-# Reused directly since these run in the same combined FastAPI process.
+# Reused directly since these all run in the same combined FastAPI process.
 import costComparison.costComparison as cost_comparison
 import demandForecasting.demandForecasting as demand_forecasting
+import reliability_scoring_api.main as reliability_scoring
 import weatherAwareRouting.weatherAwareRouting as weather_routing
 from environmental_impact_analysis.predict import predict_savings
-
-RELIABILITY_API_URL = "http://127.0.0.1:8003"
-RELIABILITY_TIMEOUT_SECONDS = 3.0
 
 # How much each signal counts toward the composite score when it's
 # available. Renormalised at request time over whichever signals actually
@@ -71,7 +68,7 @@ class TripConfidenceRequest(BaseModel):
     ice_variant: Optional[str] = None
 
     # Reliability of the specific charger the user plans to use (optional --
-    # skipped if not supplied or the reliability service isn't reachable).
+    # skipped if not supplied or no data exists for that charger).
     charger_id: Optional[str] = None
 
     # Environmental impact (optional -- needs vehicle-comparison metadata
@@ -149,19 +146,15 @@ def _congestion_factor(request: TripConfidenceRequest) -> TripConfidenceFactor:
 
     # Postcode-level demand varies hugely by area (the training baseline
     # ranges from ~0 to ~12,600 kWh/day across postcodes), so a single
-    # global "busy" threshold doesn't work -- a quiet outer-suburb postcode
-    # and a busy inner-city one need different scales. Instead, compare the
-    # forecast against that specific postcode's own typical baseline: a
-    # forecast well above its normal baseline signals unusually high demand
-    # (more congestion risk) for that area specifically, regardless of the
-    # area's absolute size.
+    # global "busy" threshold doesn't work. Instead, compare the forecast
+    # against that specific postcode's own typical baseline: a forecast
+    # well above its normal baseline signals unusually high demand for
+    # that area specifically, regardless of the area's absolute size.
     baseline_kwh = demand_forecasting.postcode_baseline.loc[
         demand_forecasting.postcode_baseline["Postcode"] == request.destination_postcode,
         "baseline_daily_kwh",
     ]
     if baseline_kwh.empty or baseline_kwh.iloc[0] <= 0:
-        # No usable baseline for this postcode -- can't say anything
-        # meaningful about relative congestion.
         return TripConfidenceFactor(
             name="congestion",
             available=False,
@@ -191,20 +184,13 @@ def _reliability_factor(request: TripConfidenceRequest) -> TripConfidenceFactor:
             name="reliability", available=False, weight=weight, reason="No charger_id supplied."
         )
 
-    try:
-        response = httpx.get(
-            f"{RELIABILITY_API_URL}/stations/{request.charger_id}",
-            timeout=RELIABILITY_TIMEOUT_SECONDS,
-        )
-        response.raise_for_status()
-        station = response.json()
-    except Exception as error:  # noqa: BLE001
-        return TripConfidenceFactor(
-            name="reliability",
-            available=False,
-            weight=weight,
-            reason=f"Reliability service unavailable: {error}",
-        )
+    station, error = _safe_call(
+        "reliabilityScoring", reliability_scoring.get_station_data, request.charger_id
+    )
+
+    if station is None:
+        reason = error or f"No reliability data on record for charger {request.charger_id}."
+        return TripConfidenceFactor(name="reliability", available=False, weight=weight, reason=reason)
 
     reliability_score = station.get("reliability_score")
     if reliability_score is None:
@@ -240,7 +226,6 @@ def _cost_factor(request: TripConfidenceRequest) -> TripConfidenceFactor:
 
     ev_cost = result.get("ev_trip_cost", 0.0)
     ice_cost = result.get("ice_trip_cost", 0.0)
-    # If ICE would have cost nothing (degenerate input), treat as neutral.
     if ice_cost <= 0:
         value = 0.5
     else:
@@ -272,7 +257,6 @@ def _environmental_factor(request: TripConfidenceRequest) -> TripConfidenceFacto
         return TripConfidenceFactor(name="environmental", available=False, weight=weight, reason=error)
 
     co2_savings = result.get("Predicted_CO2_Savings", 0.0)
-    # Savings of 200g/km+ treated as a strong result for normalisation.
     value = max(0.0, min(1.0, co2_savings / 200.0))
     reason = f"Predicted CO2 savings: {co2_savings:.1f}g/km vs the ICE comparison vehicle."
     return TripConfidenceFactor(
