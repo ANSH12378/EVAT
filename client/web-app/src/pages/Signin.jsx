@@ -108,35 +108,6 @@ function Signin() {
     }
   };
 
-  useEffect(() => {
-    console.log("JWT auto-login effect running");
-
-    // Fire the request blindly, the browser will automatically attach the HttpOnly cookie
-    fetch(jwtUrl, {
-        method: "POST",
-        credentials: 'include', 
-        headers: { 'Content-Type': 'application/json' },
-    })
-        .then(res => {
-            if (!res.ok) throw new Error("Session expired or invalid");
-            return res.json();
-        })
-        .then(data => {
-            console.log("JWT login response:", data);
-            if (data.data?.user) {
-                // Read safe user data from local storage to keep names/avatars
-                const storedUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
-                setUser({ ...storedUser, ...data.data.user });
-                // Navigate to map without needing to manually save a token string
-                navigate("/map");
-            }
-        })
-        .catch(err => {
-            console.error("JWT login error:", err);
-            // clear safe user data if the cookie is expired
-            localStorage.removeItem("currentUser"); 
-        });
-  }, []);
   
   //UI Rendering
   return (
