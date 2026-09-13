@@ -108,7 +108,7 @@ app.use(
         scriptSrc: ["'self'"],
         connectSrc: [
           "'self'",
-          "http://localhost:8080"
+          `http://localhost:${PORT}`
         ]
       }
     }
