@@ -2,7 +2,7 @@
 
 ## How does it all fit together?
 
-==Frontend ⇄ Backend ⇄ MongoDB==
+### Frontend ⇄ Backend ⇄ MongoDB
 
 The arrows represent the direction of communication. The frontend sends requests to the backend API, which then queries MongoDB or runs data science logic before returning the response back to the frontend.
 
@@ -15,7 +15,7 @@ In this guide, we will first set up the database, then the backend and front end
 ---
 ## Setting up your database
 
-We use M**ongoDB** for this project. There are two ways you can have the database set up:
+We use **MongoDB** for this project. There are two ways you can have the database set up:
 
 1. A clone of the database on your own MongoDB account
 2. Obtaining access to a database copy that is shared with other students.
@@ -33,43 +33,56 @@ It's useful to have both methods available to you, so let's go through them now.
     ![MongoDB Atlas organizations page](images/mongodb-atlas-organizations.png)
     
 3. Give your organization a name, select **MongoDB Atlas** then click **Next**:
+
     ![Creating a MongoDB Atlas organization](images/mongodb-atlas-create-organization.png)
     
 4. You may skip adding members and set permissions on the next page. Select **Create Organization**:
+
     ![MongoDB Atlas organization members and permissions](images/mongodb-atlas-organization-members.png)
     
 5. Select **Create new project**, name your project and click **Next**:
+
     ![Creating a MongoDB Atlas project](images/mongodb-atlas-create-project.png)
     
 6. Again, leave the members and permission empty here. Click **Create Project**:
+
     ![MongoDB Atlas project members and permissions](images/mongodb-atlas-project-members.png)
     
 7. Now, we create a cluster. Click **Create**:
+
     ![Creating a MongoDB Atlas cluster](images/mongodb-atlas-create-cluster.png)
     
- 8. Select **Free**, name your cluster, and then click **Create Deployment**:
-	![Configuring a free MongoDB Atlas cluster](images/mongodb-atlas-free-cluster-configuration.png)
-9. A database user should be created. ==Save the username and password== and click **Choose a connection method**:
+8. Select **Free**, name your cluster, and then click **Create Deployment**:
+
+    ![Configuring a free MongoDB Atlas cluster](images/mongodb-atlas-free-cluster-configuration.png)
+
+9. A database user should be created. **Save the username and password** and click **Choose a connection method**:
+
     ![MongoDB Atlas database user credentials](images/mongodb-atlas-database-user-credentials.png)
     
 10. Select Compass:
+
     ![Choosing a MongoDB Atlas connection method](images/mongodb-atlas-choose-connection-method.png)
 
 11. If you don't already have Compass installed, you will be prompted to download it:
+
     ![MongoDB Compass connection string and download instructions](images/mongodb-atlas-compass-connection-string.png)
     
-12. Before you click **Done**, ==save your connection string==. It is the text that has been partially de-identified in the above screenshot.
+12. Before you click **Done**, **save your connection string**. It is the text that has been partially de-identified in the above screenshot.
     
 13. Next we need to restore the backup database to this one that we just created. To do this, you will need to install [MongoDB tools](tools) and download a copy of the [database data](https://deakin365.sharepoint.com/sites/Chameleon2/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FChameleon2%2FShared%20Documents%2FProject%20%2D%20EV%20Adoption%20Tools%20%28EVAT%29%2FDatabase%5FData%2Ezip&parent=%2Fsites%2FChameleon2%2FShared%20Documents%2FProject%20%2D%20EV%20Adoption%20Tools%20%28EVAT%29). 
 
 14. Unzip the backup archive somewhere on your system, open a new terminal in the directory that contains the `dump` directory of the extracted archive, and run the command `mongorestore --uri <your_connection_uri_here> dump/`
 15. To verify the process was successful, open MongoDB Compass, select **New Connection** (or the '+' button), paste in your URI string and click **Save & Connect**:
+
     ![Creating a connection in MongoDB Compass](images/mongodb-compass-new-connection.png)
     
 16. If all was successful, you will be able to navigate the database from within Compass:
+
     ![Browsing the EVAT database in MongoDB Compass](images/mongodb-compass-database-browser.png)
     
 17. Once you've connected via Compass, you will also be able to view the data online by navigating to your project and selecting **Browse Collections**:
+
     ![Opening collections in MongoDB Atlas](images/mongodb-atlas-browse-collections.png)
     
 ### 2. Connecting to a shared database
@@ -102,7 +115,8 @@ Once Node and npm are installed:
 2. Create a new text file called `.env`.    
     ⚠️ Make sure the filename is just `.env` with no extension, not `.env.txt` or something.
 3. Files starting with a `.` are hidden by default; you may need to alter the settings in your file browser to view them. Alternatively, in terminal on macOS or Linux, use the `-a` flag with `ls` to list all files including hidden ones:
-   ![Listing hidden files in the terminal](images/terminal-list-hidden-files.png)
+
+    ![Listing hidden files in the terminal](images/terminal-list-hidden-files.png)
 
 #### Populating the .env file
 In the `.env` file, paste the following information:
@@ -146,12 +160,16 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 The server uses Nodemailer to send admin 2FA codes. For the development environment, it is set up to work with Gmail sending to a fixed address. `EMAIL_USER` is the account these emails are sent **from**; you'll use your Gmail account to do so.
 
 To set up your Gmail account for Nodemailer:
-1.     Go to [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
-2.     On the screen that appears, name your mailer and click Create:
-	![Creating a Google app password](images/google-create-app-password.png)
-3.     A password will be displayed:
-	![Generated Google app password](images/google-generated-app-password.png)
-4.     Enter this password without spaces into the `EMAIL_PASS` field and your email address into the `EMAIL_USER` field.
+1. Go to [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+2. On the screen that appears, name your mailer and click Create:
+
+    ![Creating a Google app password](images/google-create-app-password.png)
+
+3. A password will be displayed:
+
+    ![Generated Google app password](images/google-generated-app-password.png)
+
+4. Enter this password without spaces into the `EMAIL_PASS` field and your email address into the `EMAIL_USER` field.
 
 ##### ADMIN_EMAIL
 This is the email address 2FA emails are sent **to**. It should be different to the `EMAIL_USER` address - either use your Deakin email or use something called **plus addressing** to use your Gmail again 🙂.
@@ -177,7 +195,8 @@ That's it!
 There is *one* more `.env` file to set up, to be placed in the root directory of the repository. This one is also very simple.
 
 1. Create the `.env` file. It should be in the parent directory of the repository - the same folder that has the `client` and `server` directories, among other things:
-   ![Repository root containing the environment file](images/terminal-repository-root-env-file.png)
+
+    ![Repository root containing the environment file](images/terminal-repository-root-env-file.png)
 
 2. In this `.env` file, paste the following info:
 ```jsx
@@ -198,6 +217,7 @@ brew install python
 ```
 
 Verify it's installed by typing `python3` into the command line. If it's installed, you'll get a command prompt:
+
 ![Running the Python interpreter in the terminal](images/terminal-python-interpreter.png)
 
 Type `exit()` to get back out of this.
