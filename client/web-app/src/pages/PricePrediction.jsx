@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "../components/Button";
 import NavBar from "../components/NavBar";
 import {
   getPriceHealth,
@@ -31,6 +32,7 @@ export default function PricePrediction() {
   const [condition, setCondition] = useState("Like New");
 
   const [health, setHealth] = useState(null);
+  const [checkingHealth, setCheckingHealth] = useState(false);
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [result, setResult] = useState(null);
@@ -41,20 +43,42 @@ export default function PricePrediction() {
   const brands = Object.keys(BRAND_MODELS);
   const models = BRAND_MODELS[brand] || [];
 
-  useEffect(() => {
-    getPriceHealth()
-      .then(setHealth)
-      .catch((err) => {
-        console.warn("Price prediction health check failed:", err.message);
-        setHealth({ status: "unavailable", unreachable: true });
-      });
+  // Numbers each health check. Checks can overlap (a slow first check and the re-check
+  // after a prediction, say), so only the latest one may update the page.
+  const healthRequestRef = useRef(0);
+
+  /** Re-runnable so the page can recover when the service comes back. */
+  const refreshHealth = useCallback(async () => {
+    const requestId = ++healthRequestRef.current;
+    const isLatest = () => requestId === healthRequestRef.current;
+    setCheckingHealth(true);
+    try {
+      const next = await getPriceHealth();
+      if (isLatest()) setHealth(next);
+    } catch (err) {
+      // Detailed reason stays in the console; the banner must not claim a model failure
+      // when the service was simply unreachable.
+      console.warn("Price prediction health check failed:", err.message);
+      if (isLatest()) setHealth({ status: "unavailable", unreachable: true });
+    } finally {
+      // An older check finishing must not re-enable "Check again" while a newer one runs.
+      if (isLatest()) setCheckingHealth(false);
+    }
   }, []);
+
+  useEffect(() => {
+    refreshHealth();
+  }, [refreshHealth]);
+
+  useEffect(() => {
+    refreshHealth();
+  }, [refreshHealth]);
 
   useEffect(() => {
     if (!models.includes(model)) {
       setModel(models[0] || "");
     }
-  }, [brand]);
+  }, [brand, model]);
 
   useEffect(() => {
     if (fuelType === "Electric") {
@@ -100,8 +124,14 @@ export default function PricePrediction() {
 
       const prediction = await predictPrice(features, token, "web-ui");
       setResult(prediction);
+      // A successful prediction proves the service is up; keep the banner consistent
+      // with what just happened instead of leaving a stale "unavailable" message.
+      if (!health?.model_loaded) refreshHealth();
     } catch (err) {
       setServerError(err.message || "Prediction failed");
+      // Keep the banner honest in the other direction too: if the service died while
+      // this page was open, re-check rather than leaving a stale healthy message.
+      refreshHealth();
     } finally {
       setLoading(false);
     }
@@ -132,7 +162,7 @@ export default function PricePrediction() {
           {health && (
             <div className="mt-4">
               <span
-                className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                className={`inline-flex items-center gap-x-3 rounded-full px-3 py-1 text-xs font-semibold ${
                   health.unreachable || !health.model_loaded
                     ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400"
                     : "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
@@ -143,6 +173,19 @@ export default function PricePrediction() {
                   : health.model_loaded
                   ? `ML service ready · ${health.feature_count} features`
                   : "ML model not loaded"}
+                  
+                {health.model_loaded ? null : (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="tiny"
+                    onClick={refreshHealth}
+                    loading={checkingHealth}
+                    loadingLabel="Checking..."
+                  >
+                    Check again
+                  </Button>
+                )}
               </span>
             </div>
           )}
