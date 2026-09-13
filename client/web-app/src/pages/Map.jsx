@@ -366,7 +366,7 @@ export default function Map() {
     return () => {
       mounted = false;
     };
-  }, [user?.token]);
+  }, [user]);
 
   // Automatically select a station for Congestion Prediction
 useEffect(() => {
