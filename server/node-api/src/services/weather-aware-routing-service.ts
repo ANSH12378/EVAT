@@ -80,11 +80,24 @@ export default class WeatherAwareRoutingService {
 
       return response.data as WeatherAwareRoutingResult;
     } catch (error: any) {
-      throw new Error(
-        error?.response?.data?.detail ||
-          error?.response?.data?.error ||
-          "Failed to fetch weather-aware routing prediction"
-      );
+      const responseData = error?.response?.data;
+
+      const message =
+        (typeof responseData?.error?.message === "string"
+          ? responseData.error.message
+          : undefined) ||
+        (typeof responseData?.error === "string"
+          ? responseData.error
+          : undefined) ||
+        (typeof responseData?.detail === "string"
+          ? responseData.detail
+          : undefined) ||
+        (typeof responseData?.message === "string"
+          ? responseData.message
+          : undefined) ||
+        "Failed to fetch weather-aware routing prediction";
+
+      throw new Error(message);
     }
   }
 }

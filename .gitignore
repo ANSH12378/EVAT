@@ -32,11 +32,16 @@ build/
 # =========================
 # Python & Data Science Caches
 # =========================
+**/.gradle/
+.gradle/
+
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
+.venv/
+**/.venv/
 .ipynb_checkpoints/
 
 # =========================
@@ -56,4 +61,13 @@ __pycache__/
 # Specific App Directories
 # =========================
 **/auth/
-.venv/
+google-credentials.json
+**/google-credentials.json
+
+# Docker smoke-test output
+docker-test-results.txt
+docker-build.log
+
+# Compiled backend output (tsconfig has no outDir, so tsc emits beside sources)
+server/node-api/server.js
+server/node-api/src/**/*.js

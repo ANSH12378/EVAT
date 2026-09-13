@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import NavBar from "../components/NavBar";
 import { getPriceHealth, predictPrice } from "../services/pricePredictionService";
 import "../styles/Root.css";
@@ -10,27 +10,7 @@ import "../styles/NavBar.css";
 import "../styles/Validation.css";
 import "../styles/PricePrediction.css";
 
-/** Dropdown values from the Price Prediction training dataset (artifacts). */
-const BRAND_MODELS = {
-  Audi: ["A3", "A4", "Q5", "Q7"],
-  BMW: ["3 Series", "5 Series", "X3", "X5"],
-  Ford: ["Explorer", "Fiesta", "Focus", "Mustang"],
-  Honda: ["Accord", "CR-V", "Civic", "Fit"],
-  Mercedes: ["C-Class", "E-Class", "GLA", "GLC"],
-  Tesla: ["Model 3", "Model S", "Model X", "Model Y"],
-  Toyota: ["Camry", "Corolla", "Prius", "RAV4"],
-};
-
-const FUEL_TYPES = ["Diesel", "Electric", "Hybrid", "Petrol"];
-const TRANSMISSIONS = ["Automatic", "Manual"];
-const CONDITIONS = ["Like New", "New", "Used"];
-
-const formatAud = (value) =>
-  new Intl.NumberFormat("en-AU", {
-    style: "currency",
-    currency: "AUD",
-    maximumFractionDigits: 0,
-  }).format(value || 0);
+import { BRAND_MODELS, FUEL_TYPES, TRANSMISSIONS, CONDITIONS, formatAud } from "../utils/priceOptions";
 
 export default function PricePrediction() {
   const [brand, setBrand] = useState("Tesla");
@@ -43,6 +23,7 @@ export default function PricePrediction() {
   const [condition, setCondition] = useState("Like New");
 
   const [health, setHealth] = useState(null);
+  const [checkingHealth, setCheckingHealth] = useState(false);
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [result, setResult] = useState(null);
@@ -50,16 +31,32 @@ export default function PricePrediction() {
   const tokenFull = localStorage.getItem("currentUser");
   const token = tokenFull ? JSON.parse(tokenFull).token : null;
 
-  useEffect(() => {
-    getPriceHealth()
-      .then(setHealth)
-      .catch((err) => {
-        // Detailed reason stays in the console; the banner must not claim a model failure
-        // when the service was simply unreachable.
-        console.warn("Price prediction health check failed:", err.message);
-        setHealth({ status: "unavailable", unreachable: true });
-      });
+  // Numbers each health check. Checks can overlap (a slow first check and the re-check
+  // after a prediction, say), so only the latest one may update the page.
+  const healthRequestRef = useRef(0);
+
+  /** Re-runnable so the page can recover when the service comes back. */
+  const refreshHealth = useCallback(async () => {
+    const requestId = ++healthRequestRef.current;
+    const isLatest = () => requestId === healthRequestRef.current;
+    setCheckingHealth(true);
+    try {
+      const next = await getPriceHealth();
+      if (isLatest()) setHealth(next);
+    } catch (err) {
+      // Detailed reason stays in the console; the banner must not claim a model failure
+      // when the service was simply unreachable.
+      console.warn("Price prediction health check failed:", err.message);
+      if (isLatest()) setHealth({ status: "unavailable", unreachable: true });
+    } finally {
+      // An older check finishing must not re-enable "Check again" while a newer one runs.
+      if (isLatest()) setCheckingHealth(false);
+    }
   }, []);
+
+  useEffect(() => {
+    refreshHealth();
+  }, [refreshHealth]);
 
   useEffect(() => {
     const models = BRAND_MODELS[brand] || [];
@@ -106,8 +103,14 @@ export default function PricePrediction() {
       };
       const prediction = await predictPrice(features, token, "web-ui");
       setResult(prediction);
+      // A successful prediction proves the service is up; keep the banner consistent
+      // with what just happened instead of leaving a stale "unavailable" message.
+      if (!health?.model_loaded) refreshHealth();
     } catch (err) {
       setServerError(err.message || "Prediction failed");
+      // Keep the banner honest in the other direction too: if the service died while
+      // this page was open, re-check rather than leaving a stale healthy message.
+      refreshHealth();
     } finally {
       setLoading(false);
     }
@@ -135,6 +138,16 @@ export default function PricePrediction() {
                       ? ` · model loaded (${health.feature_count} features)`
                       : " · model not loaded"
                   }`}
+              {health.model_loaded ? null : (
+                <button
+                  type="button"
+                  className="pp-health-retry"
+                  onClick={refreshHealth}
+                  disabled={checkingHealth}
+                >
+                  {checkingHealth ? "Checking…" : "Check again"}
+                </button>
+              )}
             </p>
           )}
         </div>

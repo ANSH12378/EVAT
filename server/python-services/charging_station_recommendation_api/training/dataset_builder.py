@@ -34,7 +34,9 @@ TRAINING_DIR = CURRENT_FILE.parent
 # parents[4] = EVAT
 
 PROJECT_ROOT = CURRENT_FILE.parents[4]
-ENV_PATH = PROJECT_ROOT / ".env"
+ROOT_ENV_PATH = PROJECT_ROOT / ".env"
+NODE_API_ENV_PATH = PROJECT_ROOT / "server" / "node-api" / ".env"
+ENV_PATH = ROOT_ENV_PATH if ROOT_ENV_PATH.exists() else NODE_API_ENV_PATH
 
 OUTPUT_PATH = TRAINING_DIR / "training_dataset.csv"
 
@@ -42,15 +44,6 @@ OUTPUT_PATH = TRAINING_DIR / "training_dataset.csv"
 # ============================================================
 # LOAD ENVIRONMENT VARIABLES
 # ============================================================
-
-load_dotenv(ENV_PATH)
-
-MONGO_URI = os.getenv("MONGODB_URI")
-
-if not MONGO_URI:
-    raise ValueError(
-        f"MONGODB_URI was not found in: {ENV_PATH}"
-    )
 
 
 # ============================================================
@@ -278,8 +271,16 @@ def build_dataset():
     # CONNECT TO MONGODB
     # --------------------------------------------------------
 
+    load_dotenv(ENV_PATH)
+    mongo_uri = os.getenv("MONGODB_URI")
+
+    if not mongo_uri:
+        raise ValueError(
+            f"MONGODB_URI was not found in: {ENV_PATH}"
+        )
+
     client = MongoClient(
-        MONGO_URI,
+        mongo_uri,
         serverSelectionTimeoutMS=10000
     )
 

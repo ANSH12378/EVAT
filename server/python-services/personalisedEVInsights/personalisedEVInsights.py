@@ -1,12 +1,14 @@
 import os
 import pickle
+from pathlib import Path
 import numpy as np
 import pandas as pd
 from typing import Union, List
-from fastapi import HTTPException
+from common.errors import InvalidInputError
 
 # Load the bundle (model + metadata)
-with open("personalisedEVInsights/kproto_bundle.pkl", "rb") as f:
+SERVICE_DIR = Path(__file__).resolve().parent
+with (SERVICE_DIR / "kproto_bundle.pkl").open("rb") as f:
     bundle = pickle.load(f)
 
 kproto = bundle["model"]
@@ -45,33 +47,37 @@ def predict(payload: Union[dict, List[dict]]):
     Extra fields are ignored.
     Returns: {"cluster": <int>}
     """
-    try:
 
-        # Accept single object or list of objects; standardise to list
-        if isinstance(payload, dict):
-            records = [payload]
-            single = True
-        elif isinstance(payload, list):
-            records = payload
-            single = False
-        else:
-            raise HTTPException(status_code=400, detail="Invalid JSON payload")
+    # Accept single object or list of objects; standardise to list
+    if isinstance(payload, dict):
+        records = [payload]
+        single = True
 
-        df = pd.DataFrame(records)
-        df = coerce_types(df)
+    elif isinstance(payload, list):
+        records = payload
+        single = False
 
-        # Convert to numpy with mixed types; kmodes handles categoricals as strings
-        X = df.to_numpy()
+    else:
+        raise InvalidInputError("Invalid JSON payload.")
 
-        # Predict
-        clusters = kproto.predict(X, categorical=CAT_COLS)
-        # Return single prediction if input was a single object
-        if single:
-            return {"cluster": int(clusters[0])}
-        else:
-            return {"clusters": [int(c) for c in clusters]}
+    df = pd.DataFrame(records)
+    df = coerce_types(df)
 
-    except HTTPException:
-        raise
-    except HTTPException as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Convert to numpy with mixed types; kmodes handles categoricals as strings
+    X = df.to_numpy()
+
+    # Predict
+    clusters = kproto.predict(
+        X,
+        categorical=CAT_COLS,
+    )
+
+    # Return single prediction if input was a single object
+    if single:
+        return {
+            "cluster": int(clusters[0])
+        }
+
+    return {
+        "clusters": [int(c) for c in clusters]
+    }

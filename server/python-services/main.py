@@ -1,4 +1,9 @@
-from fastapi import FastAPI, HTTPException
+import logging
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from common.errors import EVATServiceError
+from common.error_handlers import register_error_handlers
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, field_validator, Field
 from typing import Union, List, Optional, Dict, Any
@@ -12,25 +17,85 @@ import costComparison.costComparison
 import costComparison.model_runner
 import pricePrediction.price_prediction_api
 import charging_station_recommendation_api.main
+import reliability_scoring_api.main as reliability_scoring
 from charging_station_recommendation_api.models.request import RankChargingStationsRequest
 from charging_station_recommendation_api.models.response import RankChargingStationsResponse
 from environmental_impact_analysis.predict import predict_savings
 import tripConfidence.trip_confidence
 from tripConfidence.trip_confidence import TripConfidenceRequest, TripConfidenceResponse
 
+logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("[startup] Training model...")
-    costComparison.model_runner.load_and_train("costComparison/data/dummy_data.csv")
+    costComparison.model_runner.load_and_train()
 
     print("[startup] Loading price prediction model...")
     await pricePrediction.price_prediction_api.startup_event()
+
+    print("[startup] Loading reliability scoring data...")
+    reliability_scoring.initialize()
 
     print("[startup] Models ready.")
     yield
 
 
 app = FastAPI(lifespan=lifespan)
+register_error_handlers(app)
+
+@app.exception_handler(EVATServiceError)
+async def evat_service_error_handler(
+    request: Request,
+    exc: EVATServiceError,
+):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": {
+                "code": exc.code,
+                "message": exc.message,
+            }
+        },
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_error_handler(
+    request: Request,
+    exc: RequestValidationError,
+):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "The request contains invalid or missing fields.",
+            }
+        },
+    )
+
+
+@app.exception_handler(Exception)
+async def unexpected_error_handler(
+    request: Request,
+    exc: Exception,
+):
+    logger.exception(
+        "Unhandled error while processing %s %s",
+        request.method,
+        request.url.path,
+        exc_info=exc,
+    )
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": {
+                "code": "INTERNAL_ERROR",
+                "message": "An unexpected error occurred.",
+            }
+        },
+    )
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,6 +103,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# =============================================================
+# Reliability Scoring Use Case
+app.include_router(reliability_scoring.router, prefix="/reliability")
 
 @app.get("/")
 def root():

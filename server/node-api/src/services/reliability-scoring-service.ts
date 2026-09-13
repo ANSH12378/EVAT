@@ -1,8 +1,7 @@
-import fetch from "node-fetch";
 
 /**
  * Node proxy for the Reliability Scoring FastAPI service.
- * Mirrors the contract at RELIABILITY_API_URL (default http://localhost:8003):
+ * Mirrors the contract at RELIABILITY_API_URL (default http://localhost:5000/reliability):
  *   GET  /health
  *   GET  /suburbs
  *   GET  /summary
@@ -15,7 +14,7 @@ import fetch from "node-fetch";
  */
 export default class ReliabilityScoringService {
   private getBaseUrl(): string {
-    return (process.env.RELIABILITY_API_URL || "http://localhost:8003").replace(
+    return (process.env.RELIABILITY_API_URL || "http://localhost:5000/reliability").replace(
       /\/$/,
       ""
     );
@@ -25,7 +24,7 @@ export default class ReliabilityScoringService {
     const baseUrl = this.getBaseUrl();
     return (
       `Reliability scoring ML service is not reachable at ${baseUrl}. ` +
-      `Start it with: npm run dev:reliability`
+      `Start it with: npm run dev:python`
     );
   }
 
@@ -61,11 +60,32 @@ export default class ReliabilityScoringService {
   }): Promise<string> {
     try {
       const body = await response.json();
-      if (typeof body?.detail === "string") return body.detail;
-      if (Array.isArray(body?.detail)) {
-        return body.detail.map((d: any) => d.msg || JSON.stringify(d)).join("; ");
+
+      // Standard EVAT ML error format
+      if (typeof body?.error?.message === "string") {
+        return body.error.message;
       }
-      return body?.message || `Reliability ML service error: ${response.status}`;
+
+      // Backward compatibility with older responses
+      if (typeof body?.error === "string") {
+        return body.error;
+      }
+
+      if (typeof body?.detail === "string") {
+        return body.detail;
+      }
+
+      if (Array.isArray(body?.detail)) {
+        return body.detail
+          .map((d: any) => d.msg || JSON.stringify(d))
+          .join("; ");
+      }
+
+      if (typeof body?.message === "string") {
+        return body.message;
+      }
+
+      return `Reliability ML service error: ${response.status}`;
     } catch {
       return `Reliability ML service error: ${response.status}`;
     }
