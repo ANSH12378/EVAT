@@ -4,20 +4,7 @@ import {
   getPriceHealth,
   predictPrice,
 } from "../services/pricePredictionService";
-
-const BRAND_MODELS = {
-  Audi: ["A3", "A4", "Q5", "Q7"],
-  BMW: ["3 Series", "5 Series", "X3", "X5"],
-  Ford: ["Explorer", "Fiesta", "Focus", "Mustang"],
-  Honda: ["Accord", "CR-V", "Civic", "Fit"],
-  Mercedes: ["C-Class", "E-Class", "GLA", "GLC"],
-  Tesla: ["Model 3", "Model S", "Model X", "Model Y"],
-  Toyota: ["Camry", "Corolla", "Prius", "RAV4"],
-};
-
-const FUEL_TYPES = ["Diesel", "Electric", "Hybrid", "Petrol"];
-const TRANSMISSIONS = ["Automatic", "Manual"];
-const CONDITIONS = ["Like New", "New", "Used"];
+import { BRAND_MODELS, FUEL_TYPES, TRANSMISSIONS, CONDITIONS, formatAud } from "../utils/priceOptions";
 
 const inputClass =
   "w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 " +
@@ -32,13 +19,6 @@ const inputClass =
 
 const labelClass =
   "mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400";
-
-const formatAud = (value) =>
-  new Intl.NumberFormat("en-AU", {
-    style: "currency",
-    currency: "AUD",
-    maximumFractionDigits: 0,
-  }).format(value || 0);
 
 export default function PricePrediction() {
   const [brand, setBrand] = useState("Tesla");
