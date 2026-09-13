@@ -75,10 +75,14 @@ function Signin() {
 
         // Fetch detailed profile
         const profileRes = await fetch(`${API_URL}/profile/user-profile`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          method: 'GET',
+          credentials: 'include', 
+          headers: { 'Content-Type': 'application/json' }
         });
+
         if (!profileRes.ok)
           throw new Error("Failed to fetch user profile details");
+          
         const profileData = await profileRes.json();
 
         // Construct user data with token included
