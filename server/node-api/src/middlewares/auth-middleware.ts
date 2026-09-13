@@ -18,11 +18,6 @@ interface JwtPayload {
 export const authGuard = (allowedRoles: string[]) => {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({ message: "No token provided" });
-      }
-
       const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
 
       if (!token) {
