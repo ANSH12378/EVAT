@@ -23,6 +23,7 @@ import {
   user,
   vehicle,
   iceVehicle,
+  nearbyPlaces,
 } from '../../data/apiEndpoints';
 
 const EndpointItem = ({ item, onEndpointClick }) => {

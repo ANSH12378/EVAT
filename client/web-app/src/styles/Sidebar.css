@@ -1,0 +1,372 @@
+/* Sidebar.css */
+
+/*
+This CSS has the style settings for Sidebar (access when clicking on a charger).
+
+*/
+
+.sidebar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-min-width);
+  max-width: var(--sidebar-max-width);
+  height: var(--sidebar-height);
+  background: var(--sidebar-container-background);
+  color: var(--sidebar-text-color);
+  border-right: var(--sidebar-border);
+  box-shadow: var(--sidebar-shadow-right);
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  position: relative;
+  padding: var(--sidebar-padding);
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sidebar-content-padding);
+}
+
+.sidebar-linebreak {
+  margin: var(--linebreak-margin);
+  border-top: var(--linebreak-border-top);
+}
+
+.rating-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: var(--sidebar-gap);
+}
+
+.sidebar-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--sidebar-padding);
+}
+
+.sidebar-detail-label {
+  text-align: left;
+}
+
+.sidebar-detail-value {
+  text-align: right;
+}
+
+.action-buttons {
+  display: flex;
+  padding: var(--sidebar-padding);
+  gap: var(--sidebar-gap);
+}
+
+.sticky-bottom {
+  position: sticky;
+  bottom: 0;
+}
+
+.sticky-top {
+  position: sticky;
+  top: 0;
+}
+
+.favourite-btn {
+  flex: 1;
+  gap:5px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  border: var(--button-favourite-border);
+  background: var(--button-favourite-background);
+}
+
+.favourite-btn:active {
+  background: var(--button-favourite-background-active);
+}
+
+.saved {
+  background: var(--button-favourite-checked-background);
+  border: var(--button-favourite-checked-border);
+  color: var(--button-favourite-checked-text-color);
+}
+
+.saved:active {
+  background: var(--button-favourite-checked-background-active);
+}
+
+.review-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap:5px;
+  border: var(--button-reviewed-border);
+  background: var(--button-reviewed-background);
+}
+
+.review-btn:active {
+  background: var(--button-reviewed-background-active);
+}
+
+.reviewed {
+  background: var(--button-reviewed-checked-background);
+  border: var(--button-reviewed-checked-border);
+  color: var(--button-reviewed-checked-text-color);
+}
+
+.reviewed:active {
+  background: var(--button-reviewed-checked-background-active);
+}
+
+/* Heart */
+.heart-full { 
+  fill: var(--button-favourite-checked-heart-color); 
+  color: var(--button-favourite-checked-heart-border-color);
+}
+
+.heart-empty { 
+  fill: var(--button-favourite-heart-color); 
+  color: var(--button-favourite-heart-border-color);
+}
+
+/* Star */
+.star-full { 
+  fill: var(--button-reviewed-checked-star-color); 
+  color: var(--button-reviewed-checked-star-border-color);
+}
+
+.star-empty { 
+  fill: var(--button-reviewed-star-color); 
+  color: var(--button-reviewed-star-border-color);
+}
+
+.rating-input {
+  display: flex;
+  gap: var(--star-rating-gap);
+  margin-bottom: var(--star-rating-margin-bottom);
+}
+
+.rating-star {
+  cursor: pointer;
+  transition: var(--star-rating-transition);
+}
+
+.rating-star:hover {
+  transform: scale(1.2);
+}
+
+.review-item {
+  margin: var(--review-item-margin);
+}
+
+.reviewer {
+  display: flex;
+  align-content: center;
+  gap: var(--reviewer-gap);
+  max-height: var(--reviewer-name-height);
+  margin-bottom: var(--reviewer-margin);
+}
+
+.reviewer-avatar {
+  min-width: var(--reviewer-name-height);
+  max-height: var(--reviewer-name-heightsize);
+  border-radius:  var(--reviewer-avatar-radius);
+  background-color: var(--reviewer-profile-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.review-time {
+  text-align: right;
+  margin-bottom: var(--reviewer-margin);
+}
+
+.reviewer-name {
+  max-height: var(--reviewer-name-height);
+  margin-bottom: var(--reviewer-margin);
+}
+
+.reviewer-details {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--reviewer-details-gap);
+}
+
+.review-rating {
+  display: flex;
+}
+
+.review-comment {
+  box-sizing: border-box;
+}
+
+.estimated-display {
+  color: var(--estimator-text-color);
+  padding: var(--estimator-padding);
+  background-color: var(--estimator-background-color);
+  border-radius: var(--estimator-border-radius);
+  height: var(--estimator-height);
+  width: var(--estimator-width);
+  text-align: center;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.promo-section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  padding: var(--sidebar-padding);
+  cursor: pointer;
+  color: inherit;
+}
+
+.promo-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+}
+
+.promo-section-hint {
+  margin: 0 0 0.5rem 0;
+  opacity: 0.75;
+}
+
+.promo-category-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.promo-chip {
+  border: 1px solid var(--grey-light);
+  background: var(--white);
+  color: var(--text-color-black);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.promo-chip.active {
+  background: var(--primary-color-base);
+  border-color: var(--primary-color-dark);
+  color: var(--secondary-color-dark);
+  font-weight: 700;
+}
+
+.promo-card {
+  border: 1px solid var(--grey-light);
+  border-radius: var(--website-radius);
+  padding: 0.65rem;
+  margin-bottom: 0.6rem;
+  background: var(--white);
+  color: var(--text-color-black);
+  box-shadow: var(--website-shadow-box);
+}
+
+.promo-photo {
+  width: 100%;
+  height: 8rem;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  background: var(--grey-light);
+  display: block;
+}
+
+.promo-photo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+.promo-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.promo-emoji {
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+.promo-card-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.promo-business {
+  font-size: 0.75rem;
+  opacity: 0.75;
+  color: var(--text-color-dark);
+}
+
+.promo-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-color-black);
+}
+
+.promo-discount {
+  background: var(--tertiary-color-light);
+  color: var(--tertiary-color-dark);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.promo-description {
+  margin: 0.4rem 0 0.5rem 0;
+  color: var(--text-color-dark);
+}
+
+.promo-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--text-color-dark);
+}
+
+.promo-distance {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--text-color-dark);
+}
+
+.promo-code-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px dashed var(--secondary-color-base);
+  background: transparent;
+  color: var(--secondary-color-base);
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}

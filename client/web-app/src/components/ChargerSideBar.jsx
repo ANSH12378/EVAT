@@ -10,6 +10,7 @@ import {
 import { toast } from "react-toastify";
 import { getChargerCongestion } from '../services/chargerCongestionService';
 import { Button } from './Button';
+import NearbyPlaces from './NearbyPlaces';
 
 
 export default function ChargerSideBar({ station, onClose }) {
@@ -462,6 +463,8 @@ export default function ChargerSideBar({ station, onClose }) {
           </div>
         )}
 
+
+        <NearbyPlaces station={station} />
 
         {/* Booking Tool */}
         <div className="sidebar-linebreak" />
