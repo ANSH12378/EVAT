@@ -222,21 +222,18 @@ export default function Map() {
   }, [isDark]);
 
   return (
-    <div
-      className={`relative h-[calc(100vh-64px)] min-h-[650px] w-full overflow-hidden ${
-        isDark
-          ? "dark bg-black text-white"
-          : "bg-slate-100 text-slate-900"
-      }`}
-    >
+    <div className="relative h-(--content-height) w-full overflow-hidden bg-surface-100 text-surface-900">
       <div className="relative h-full w-full overflow-hidden">
         {!bbox && !loading && user?.token && (
           <div
-            className={`absolute left-4 top-4 z-[1100] max-w-xs rounded-xl border px-4 py-3 shadow-lg ${
-              isDark
-                ? "border-emerald-900/60 bg-[#050806]/95 text-emerald-300"
-                : "border-blue-200 bg-blue-50 text-blue-800"
-            }`}
+            className="
+              absolute left-4 top-4
+              max-w-xs rounded-xl
+              border border-blue-200 bg-blue-50
+              px-4 py-3
+              shadow-lg
+              dark:border-emerald-900/60 text-emerald-300
+            "
           >
             <div className="flex items-start gap-3">
               <span className="text-lg">📍</span>
@@ -246,13 +243,7 @@ export default function Map() {
                   Map Loading
                 </p>
 
-                <p
-                  className={`mt-1 text-xs leading-5 ${
-                    isDark
-                      ? "text-emerald-400"
-                      : "text-blue-700"
-                  }`}
-                >
+                <p className="mt-1 text-xs leading-5 text-primary dark:text-emerald-400">
                   Wait for the map to load or move/zoom to search
                   for chargers.
                 </p>
@@ -263,11 +254,11 @@ export default function Map() {
 
         {!user?.token && (
           <div
-            className={`absolute left-4 top-4 z-[1100] max-w-xs rounded-xl border px-4 py-3 shadow-lg ${
-              isDark
-                ? "border-amber-900/60 bg-[#080603]/95 text-amber-300"
-                : "border-amber-200 bg-amber-50 text-amber-800"
-            }`}
+            className="
+              absolute left-4 top-4 
+              max-w-xs rounded-xl border px-4 py-3 shadow-lg border-amber-200 bg-amber-50 text-amber-800
+              dark:border-amber-900/60 dark:bg-[#080603]/95 dark:text-amber-300
+            "
           >
             <div className="flex items-start gap-3">
               <span className="text-lg">⚠️</span>
@@ -277,13 +268,7 @@ export default function Map() {
                   Login Required
                 </p>
 
-                <p
-                  className={`mt-1 text-xs leading-5 ${
-                    isDark
-                      ? "text-amber-400"
-                      : "text-amber-700"
-                  }`}
-                >
+                <p className="mt-1 text-xs leading-5 dark:text-amber-400 text-amber-700">
                   Please log in to use weather-aware routing.
                 </p>
               </div>
@@ -302,12 +287,11 @@ export default function Map() {
           weatherLoading={weatherLoading}
           onClick={handleCalculateEnergy}
           handleReset={handleReset}
-          isDark={isDark}
           onPlaceSelect={handlePlaceSelect}
         />
 
         <MapContainer
-          className="!h-full !w-full"
+          className="h-full"
           center={[-37.8136, 144.9631]}
           zoom={13}
         >
@@ -368,24 +352,6 @@ export default function Map() {
             />
           </div>
         )}
-
-        <button
-          type="button"
-          aria-label="Toggle dark mode"
-          title={
-            isDark
-              ? "Switch to light mode"
-              : "Switch to dark mode"
-          }
-          onClick={() => setIsDark((prev) => !prev)}
-          className={`absolute bottom-5 left-5 z-[1200] flex h-11 w-11 items-center justify-center rounded-full border text-lg shadow-lg transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
-            isDark
-              ? "border-emerald-900/60 bg-[#050806] text-white hover:bg-[#08100c] focus:ring-offset-black"
-              : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50 focus:ring-offset-white"
-          }`}
-        >
-          {isDark ? "☀️" : "🌙"}
-        </button>
       </div>
     </div>
   );

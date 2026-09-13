@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Button } from "./Button";
 
 export default function WeatherAwareSelection({
   originLocation,
@@ -135,11 +136,10 @@ export default function WeatherAwareSelection({
 
   return (
     <div
-      className={`absolute left-4 top-4 z-[1000] w-[360px] max-w-[calc(100%-2rem)] rounded-2xl border p-5 shadow-xl backdrop-blur-sm ${
-        isDark
-          ? "border-emerald-900/60 bg-[#030504]/95 text-white shadow-emerald-950/30"
-          : "border-slate-200 bg-white/95 text-slate-900"
-      }`}
+      className="
+        absolute right-4 top-4 z-[1000] w-[360px] max-w-[calc(100%-2rem)] rounded-2xl border p-5 shadow-xl backdrop-blur-sm
+        border-surface-200 bg-background/95 text-surface-900
+        dark:border-emerald-900/60 dark:shadow-emerald-950/30"
     >
       <div className="mb-5">
         <div className="mb-2 flex items-center gap-2">
@@ -151,18 +151,12 @@ export default function WeatherAwareSelection({
         </div>
 
         <h3
-          className={`text-xl font-extrabold ${
-            isDark ? "text-white" : "text-slate-900"
-          }`}
+          className="text-xl font-extrabold text-surface-900"
         >
           Weather-Aware Routing
         </h3>
 
-        <p
-          className={`mt-1 text-xs leading-5 ${
-            isDark ? "text-slate-400" : "text-slate-500"
-          }`}
-        >
+        <p className="mt-1 text-xs leading-5 text-surface-500">
           Enter your journey details to calculate energy requirements based
           on weather and route conditions.
         </p>
@@ -171,9 +165,7 @@ export default function WeatherAwareSelection({
       <div className="mb-4">
         <label
           htmlFor="weather-origin"
-          className={`mb-1.5 block text-sm font-bold ${
-            isDark ? "text-slate-200" : "text-slate-700"
-          }`}
+          className="mb-1.5 block text-sm font-bold text-surface-700"
         >
           Origin
         </label>
@@ -184,11 +176,11 @@ export default function WeatherAwareSelection({
           type="text"
           placeholder="Type origin or click map"
           onFocus={() => setActiveField("origin")}
-          className={`w-full rounded-xl border px-3 py-3 text-sm font-semibold outline-none transition ${
-            isDark
-              ? "border-emerald-900/60 bg-[#08100c] text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-              : "border-slate-300 bg-white text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-          }`}
+          className="
+            w-full rounded-xl border px-3 py-3 text-sm font-semibold outline-none transition
+            border-surface-300 placeholder:text-surface-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20
+            dark:border-emerald-900/60 dark:focus:border-emerald-500 dark:focus:ring-emerald-500/20
+          "
         />
 
         {activeField === "origin" && !originLocation?.address && (
@@ -201,9 +193,7 @@ export default function WeatherAwareSelection({
       <div className="mb-4">
         <label
           htmlFor="weather-destination"
-          className={`mb-1.5 block text-sm font-bold ${
-            isDark ? "text-slate-200" : "text-slate-700"
-          }`}
+          className="mb-1.5 block text-sm font-bold text-surface-700"
         >
           Destination
         </label>
@@ -214,11 +204,11 @@ export default function WeatherAwareSelection({
           type="text"
           placeholder="Type destination or click map"
           onFocus={() => setActiveField("destination")}
-          className={`w-full rounded-xl border px-3 py-3 text-sm font-semibold outline-none transition ${
-            isDark
-              ? "border-emerald-900/60 bg-[#08100c] text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-              : "border-slate-300 bg-white text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-          }`}
+          className="
+            w-full rounded-xl border px-3 py-3 text-sm font-semibold outline-none transition
+            border-surface-300 placeholder:text-surface-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20
+            dark:border-emerald-900/60 dark:focus:border-emerald-500 dark:focus:ring-emerald-500/20
+          "
         />
 
         {activeField === "destination" &&
@@ -230,25 +220,17 @@ export default function WeatherAwareSelection({
       </div>
 
       <div
-        className={`mb-4 flex items-center justify-between rounded-xl border p-3 ${
-          isDark
-            ? "border-emerald-900/60 bg-[#08100c]"
-            : "border-slate-200 bg-slate-50"
-        }`}
+        className="mb-4 flex items-center justify-between rounded-xl border p-3 dark:border-emerald-900/60 border-surface-200 bg-surface-50"
       >
         <div>
           <p
-            className={`text-sm font-bold ${
-              isDark ? "text-white" : "text-slate-700"
-            }`}
+            className="text-sm font-bold text-surface-700"
           >
             Air Conditioning
           </p>
 
           <p
-            className={`mt-0.5 text-xs ${
-              isDark ? "text-slate-400" : "text-slate-500"
-            }`}
+            className="mt-0.5 text-xs text-surface-500"
           >
             Include AC energy usage
           </p>
@@ -262,19 +244,19 @@ export default function WeatherAwareSelection({
             className="peer sr-only"
           />
 
-          <div className="h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-emerald-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-500/30 dark:bg-slate-700" />
+          <div className="h-6 w-11 rounded-full bg-surface-300 transition peer-checked:bg-emerald-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-500/30 dark:bg-surface-700" />
 
-          <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5" />
+          <div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-background shadow-sm transition-transform peer-checked:translate-x-5" />
         </label>
       </div>
 
       <div
         className={`mb-4 text-right text-xs font-semibold ${
-          isDark ? "text-slate-400" : "text-slate-500"
+          isDark ? "text-surface-400" : "text-surface-500"
         }`}
       >
         AC:{" "}
-        <span className={acOn ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}>
+        <span className={acOn ? "text-emerald-600 dark:text-emerald-400" : "text-surface-400"}>
           {acOn ? "On" : "Off"}
         </span>
       </div>
@@ -285,33 +267,25 @@ export default function WeatherAwareSelection({
         </div>
       )}
 
-      <button
+      <Button
         type="button"
+        variant="primary"
         onClick={onClick}
-        disabled={weatherLoading}
-        className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:bg-emerald-500 dark:text-black dark:hover:bg-emerald-400 dark:focus:ring-offset-[#030504] disabled:cursor-not-allowed disabled:opacity-60"
+        loading={weatherLoading}
+        loadingLabel="Calculating..."
+        className="w-full"
       >
-        {weatherLoading ? (
-          <span className="flex items-center justify-center gap-2">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-            Calculating...
-          </span>
-        ) : (
-          "Calculate Energy"
-        )}
-      </button>
+        Calculate Energy
+      </Button>
 
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        className="mt-2 w-full"
         onClick={handleLocalReset}
-        className={`mt-2 w-full rounded-xl border px-4 py-2.5 text-sm font-bold transition ${
-          isDark
-            ? "border-emerald-900/60 bg-[#08100c] text-slate-200 hover:border-emerald-700 hover:bg-emerald-950/40"
-            : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800"
-        }`}
       >
         Reset
-      </button>
+      </Button>
     </div>
   );
 }

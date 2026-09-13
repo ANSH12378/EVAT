@@ -4,7 +4,7 @@ import {
   getChargingRecommendations, 
   selectChargingStation,
 } from "../services/chargingRecommendationService.js";
-import "../styles/ChargingRecommendations.css";
+import "./ChargingRecommendations.css";
 import { Banner } from "./Banner.js";
 import { XIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
@@ -149,7 +149,7 @@ function ChargingRecommendations() {
     <div
       className={twMerge(
         'absolute bg-background/80 rounded-t-xl bottom-0 inset-x-0 p-4 z-12 w-full backdrop-blur max-h-1/2 overflow-x-hidden overflow-y-auto',
-        '[&::-webkit-scrollbar]:w-2 [%::-webkit-scrollbar-track]:rounded-md',
+        '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:rounded-md',
         '[&::-webkit-scrollbar-thumb]:bg-foreground [&::-webkit-scrollbar-thumb]:rounded-md',
         '[&::-webkit-scrollbar-thumb:hover]:bg-emerald-700',
         'md:inset-x-auto md:max-w-sm md:bottom-[unset] md:top-2 md:right-4 md:rounded-xl xl:top-4',
