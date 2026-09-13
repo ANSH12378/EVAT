@@ -60,11 +60,32 @@ export default class ReliabilityScoringService {
   }): Promise<string> {
     try {
       const body = await response.json();
-      if (typeof body?.detail === "string") return body.detail;
-      if (Array.isArray(body?.detail)) {
-        return body.detail.map((d: any) => d.msg || JSON.stringify(d)).join("; ");
+
+      // Standard EVAT ML error format
+      if (typeof body?.error?.message === "string") {
+        return body.error.message;
       }
-      return body?.message || `Reliability ML service error: ${response.status}`;
+
+      // Backward compatibility with older responses
+      if (typeof body?.error === "string") {
+        return body.error;
+      }
+
+      if (typeof body?.detail === "string") {
+        return body.detail;
+      }
+
+      if (Array.isArray(body?.detail)) {
+        return body.detail
+          .map((d: any) => d.msg || JSON.stringify(d))
+          .join("; ");
+      }
+
+      if (typeof body?.message === "string") {
+        return body.message;
+      }
+
+      return `Reliability ML service error: ${response.status}`;
     } catch {
       return `Reliability ML service error: ${response.status}`;
     }

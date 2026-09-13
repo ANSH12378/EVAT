@@ -39,6 +39,7 @@ def register_error_handlers(app: FastAPI) -> None:
                     "message": str(exc.detail),
                 }
             },
+            headers=exc.headers,
         )
 
     @app.exception_handler(EVATServiceError)

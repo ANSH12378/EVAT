@@ -88,3 +88,23 @@ def test_existing_http_exception_uses_standard_format():
             "message": "Test resource was not found.",
         }
     }
+
+def test_http_exception_preserves_headers():
+    @app.get("/test/header-error")
+    def header_error_endpoint():
+        raise HTTPException(
+            status_code=405,
+            detail="Method not allowed.",
+            headers={"Allow": "GET"},
+        )
+
+    response = client.get("/test/header-error")
+
+    assert response.status_code == 405
+    assert response.headers["allow"] == "GET"
+    assert response.json() == {
+        "error": {
+            "code": "HTTP_ERROR",
+            "message": "Method not allowed.",
+        }
+    }
