@@ -126,7 +126,7 @@ function Signin() {
             if (data.data?.user) {
                 // Read safe user data from local storage to keep names/avatars
                 const storedUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
-                
+                setUser({ ...storedUser, ...data.data.user });
                 // Navigate to map without needing to manually save a token string
                 navigate("/map");
             }
