@@ -29,9 +29,21 @@ from pydantic import BaseModel
 # Reused directly since these all run in the same combined FastAPI process.
 import costComparison.costComparison as cost_comparison
 import demandForecasting.demandForecasting as demand_forecasting
-import reliability_scoring_api.main as reliability_scoring
 import weatherAwareRouting.weatherAwareRouting as weather_routing
 from environmental_impact_analysis.predict import predict_savings
+# reliability_scoring_api is deliberately NOT imported at module level -- see
+# _reliability_factor() below.
+
+# Assumed starting battery charge for this feature, since we don't currently
+# collect the user's actual current battery level. This is deliberately NOT
+# weatherAwareRouting.config.DEFAULT_SOC_PCT (10%) -- that constant is a
+# conservative threshold used elsewhere for a "do you need to charge"
+# warning, not a "how much charge does the driver actually start with"
+# assumption. For a confidence score, assuming a full charge is the correct
+# baseline: a trip consuming 5% should read as high confidence (95%
+# remaining), and one consuming 80% should read as low confidence (20%
+# remaining) -- not the other way around.
+ASSUMED_STARTING_SOC_PCT = 100.0
 
 # How much each signal counts toward the composite score when it's
 # available. Renormalised at request time over whichever signals actually
@@ -113,14 +125,21 @@ def _energy_factor(request: TripConfidenceRequest) -> TripConfidenceFactor:
     if result is None:
         return TripConfidenceFactor(name="energy", available=False, weight=weight, reason=error)
 
-    soc_remaining = result.get("soc_with_contingency_pct")
-    if soc_remaining is None:
+    soc_needed = result.get("soc_with_contingency_pct")
+    if soc_needed is None:
         return TripConfidenceFactor(
             name="energy", available=False, weight=weight, reason="No SOC estimate returned."
         )
 
-    # More battery remaining on arrival -> more confidence. Clamp to [0, 100].
-    value = max(0.0, min(1.0, soc_remaining / 100.0))
+    # soc_with_contingency_pct is how much battery the trip CONSUMES (with a
+    # safety margin already built in) -- not how much is left on arrival.
+    # Scoring it directly would invert the factor: a short trip using 5%
+    # would score as low confidence and a route using 80-100% would score as
+    # high confidence. Convert to actual remaining charge by subtracting the
+    # required SOC from the assumed starting charge, then clamp to a valid
+    # percentage.
+    soc_remaining = max(0.0, min(100.0, ASSUMED_STARTING_SOC_PCT - soc_needed))
+    value = soc_remaining / 100.0
     reason = f"Estimated {soc_remaining:.0f}% battery remaining on arrival."
     return TripConfidenceFactor(
         name="energy", available=True, value=value, weight=weight, detail=result, reason=reason
@@ -182,6 +201,22 @@ def _reliability_factor(request: TripConfidenceRequest) -> TripConfidenceFactor:
     if not request.charger_id:
         return TripConfidenceFactor(
             name="reliability", available=False, weight=weight, reason="No charger_id supplied."
+        )
+
+    # Imported here, not at module level. reliability_scoring_api pulls in
+    # vaderSentiment, which is declared in its own requirements.txt but not
+    # always present when this combined service is provisioned via the
+    # root-level requirements file. A missing/broken import here must only
+    # disable this one factor, not prevent the whole combined app -- and
+    # every other endpoint in it -- from starting.
+    try:
+        import reliability_scoring_api.main as reliability_scoring
+    except Exception as error:  # noqa: BLE001
+        return TripConfidenceFactor(
+            name="reliability",
+            available=False,
+            weight=weight,
+            reason=f"reliabilityScoring unavailable: {error}",
         )
 
     station, error = _safe_call(
