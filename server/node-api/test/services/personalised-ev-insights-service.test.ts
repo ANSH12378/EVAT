@@ -68,7 +68,11 @@ describe("PersonalisedEVInsightsService", () => {
     });
 
     const service = new PersonalisedEVInsightsService();
-    await service.submitInsights("user-1", "user@example.com", payload);
+    const result = await service.submitInsights(
+      "user-1",
+      "user@example.com",
+      payload
+    );
 
     expect(mockedAxios.post).toHaveBeenCalledWith(
       expect.stringContaining("/personalisedEVInsights/predict"),
@@ -82,8 +86,10 @@ describe("PersonalisedEVInsightsService", () => {
         recommendationCategory: "Full EV Recommended",
         estimatedAnnualSavings: 3288,
         estimatedAnnualCo2ReductionKg: 2758.08,
+        estimatedSavings: 274,
       })
     );
+    expect(result.data).toEqual({});
   });
 
   test("rejects malformed suitability responses", async () => {
@@ -103,6 +109,34 @@ describe("PersonalisedEVInsightsService", () => {
     await expect(
       service.submitInsights("user-1", "user@example.com", payload)
     ).rejects.toThrow("Invalid suitability response from Python API");
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  test("rejects a recommendation category that conflicts with its score", async () => {
+    jest
+      .spyOn(PersonalisedEVInsightsRepository, "createInsight")
+      .mockResolvedValue({ _id: { toString: () => "insight-1" } } as any);
+    const update = jest.spyOn(
+      PersonalisedEVInsightsRepository,
+      "updateInsightWithResult"
+    );
+    mockedAxios.post.mockResolvedValue({
+      data: {
+        cluster: 1,
+        suitability: {
+          ...suitability,
+          recommendationCategory: "EV Optional",
+        },
+      },
+    });
+
+    const service = new PersonalisedEVInsightsService();
+
+    await expect(
+      service.submitInsights("user-1", "user@example.com", payload)
+    ).rejects.toThrow(
+      "Suitability score and recommendation category do not match"
+    );
     expect(update).not.toHaveBeenCalled();
   });
 });

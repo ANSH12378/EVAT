@@ -124,7 +124,7 @@ export default class PersonalisedEVInsightsRepository {
             assumptions: result.assumptions,
           },
         },
-        { new: true }
+        { new: true, runValidators: true }
       ).exec();
     } catch (error: any) {
       if (error instanceof Error) {
@@ -142,7 +142,10 @@ export default class PersonalisedEVInsightsRepository {
     userId: string
   ): Promise<IPersonalisedEVInsights | null> {
     try {
-      const insight = await PersonalisedEVInsights.findOne({ userId })
+      const insight = await PersonalisedEVInsights.findOne({
+        userId,
+        evReadinessScore: { $type: "number" },
+      })
         .sort({ createdAt: -1 })
         .exec();
 

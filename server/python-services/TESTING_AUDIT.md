@@ -119,7 +119,7 @@ Key findings:
 | Price Prediction | 11 | Passing |
 | Demand Forecasting | 0 | Future work |
 | Cost Comparison | 0 | Future work |
-| Personalised EV Insights | 4 | Passing |
+| Personalised EV Insights | 11 | Passing |
 | Reliability Scoring | 0 | Future work |
 | Weather-Aware Routing | 0 | Future work |
 

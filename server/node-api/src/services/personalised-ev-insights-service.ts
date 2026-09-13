@@ -5,6 +5,11 @@ import PersonalisedEVInsightsRepository, {
 import { IPersonalisedEVInsights } from "../models/personalisedEVInsightsModel";
 
 const PYTHON_API = process.env.PYTHON_API_URL;
+const RECOMMENDATION_CATEGORIES = [
+  "Full EV Recommended",
+  "Hybrid Recommended",
+  "EV Optional",
+] as const;
 
 interface SuitabilityPrediction {
   evReadinessScore: number;
@@ -42,7 +47,7 @@ export default class PersonalisedEVInsightsService {
     userId: string,
     email: string,
     payload: PersonalisedEVInsightsPayload
-  ): Promise<{ message: string }> {
+  ): Promise<{ message: string; data: IPersonalisedEVInsights }> {
     try {
       this.validateUser(userId, email);
       this.validatePayload(payload);
@@ -56,13 +61,19 @@ export default class PersonalisedEVInsightsService {
       const prediction = await this.getPrediction(payload);
       const processedResult = this.buildProcessedResult(payload, prediction);
 
-      await PersonalisedEVInsightsRepository.updateInsightWithResult(
+      const updatedRecord =
+        await PersonalisedEVInsightsRepository.updateInsightWithResult(
         savedRecord._id.toString(),
         processedResult
       );
 
+      if (!updatedRecord) {
+        throw new Error("Insight result could not be persisted");
+      }
+
       return {
         message: "Personalised EV insight generated and saved successfully",
+        data: updatedRecord,
       };
     } catch (error: any) {
       throw new Error("Error saving personalised EV insights: " + error.message);
@@ -102,25 +113,75 @@ export default class PersonalisedEVInsightsService {
   ): Promise<PersonalisedPrediction> {
     const response = await axios.post(`${PYTHON_API}/personalisedEVInsights/predict`, payload);
 
-    if (response.data?.cluster === undefined || response.data?.cluster === null) {
+    if (!Number.isInteger(response.data?.cluster)) {
       throw new Error("Invalid cluster response from Python API");
     }
 
-    const suitability = response.data?.suitability;
-    if (
-      !suitability ||
-      !Number.isFinite(suitability.evReadinessScore) ||
-      suitability.evReadinessScore < 0 ||
-      suitability.evReadinessScore > 100 ||
-      !suitability.recommendationCategory
-    ) {
-      throw new Error("Invalid suitability response from Python API");
-    }
+    const suitability = this.validateSuitability(response.data?.suitability);
 
     return {
       cluster: response.data.cluster,
       suitability,
     };
+  }
+
+  private validateSuitability(value: any): SuitabilityPrediction {
+    const numericFields = [
+      "evReadinessScore",
+      "annualKm",
+      "estimatedAnnualFuelCost",
+      "estimatedAnnualEvChargingCost",
+      "estimatedAnnualSavings",
+      "estimatedAnnualCo2ReductionKg",
+    ];
+    const componentFields = [
+      "drivingDemand",
+      "financialBenefit",
+      "chargingPracticality",
+      "solarAccess",
+      "environmentalPriority",
+      "budgetReadiness",
+      "roadTripPenalty",
+    ];
+    const assumptionFields = [
+      "evEnergyKwhPerKm",
+      "evCostPerKm",
+      "electricityCo2KgPerKwh",
+    ];
+
+    const invalidNumber = (number: unknown) =>
+      !Number.isFinite(number) || Number(number) < 0;
+
+    if (
+      !value ||
+      typeof value !== "object" ||
+      numericFields.some((field) => invalidNumber(value[field])) ||
+      value.evReadinessScore > 100 ||
+      !RECOMMENDATION_CATEGORIES.includes(value.recommendationCategory) ||
+      typeof value.personalisedPredictionInsight !== "string" ||
+      !value.personalisedPredictionInsight.trim() ||
+      !value.scoreComponents ||
+      componentFields.some((field) => invalidNumber(value.scoreComponents[field])) ||
+      !value.assumptions ||
+      assumptionFields.some((field) => invalidNumber(value.assumptions[field])) ||
+      !["solar", "home", "work", "public"].includes(
+        value.assumptions.chargingProfile
+      )
+    ) {
+      throw new Error("Invalid suitability response from Python API");
+    }
+
+    const expectedCategory =
+      value.evReadinessScore >= 70
+        ? "Full EV Recommended"
+        : value.evReadinessScore >= 45
+          ? "Hybrid Recommended"
+          : "EV Optional";
+    if (value.recommendationCategory !== expectedCategory) {
+      throw new Error("Suitability score and recommendation category do not match");
+    }
+
+    return value as SuitabilityPrediction;
   }
 
   private buildProcessedResult(
@@ -174,56 +235,22 @@ export default class PersonalisedEVInsightsService {
       throw new Error(`Unsupported cluster value: ${cluster}`);
     }
 
-    const monthlyKm = payload.weekly_km * 4;
-
-    let electricityCostPerKm = 0.07; // default = public
-
-    const solar = payload.solar_panels;
-    const charging = payload.charging_preference;
-
-    // Solar 
-    if (solar === "Yes") {
-      electricityCostPerKm = 0.02;
-    }
-
-    // Home charging
-    else if (charging === "Home") {
-      electricityCostPerKm = 0.04;
-    }
-
-    // Work 
-    else if (charging === "Work") {
-      electricityCostPerKm = 0.05;
-    }
-
-    // Public / No preference
-    else {
-      electricityCostPerKm = 0.07;
-    }
-
-    const estimatedEvCost = monthlyKm * electricityCostPerKm;
-
-    let estimatedSavings = 0;
+    const estimatedSavings = Number(
+      (suitability.estimatedAnnualSavings / 12).toFixed(2)
+    );
     let savingsMessage = "";
 
     const ownership = payload.car_ownership;
 
     if (ownership === "Yes - Electric") {
-      estimatedSavings = 0;
       savingsMessage ="You already own an EV, so switching savings do not apply.";
     } else if (ownership === "No - I don't own a car") {
-      estimatedSavings = 0;
       savingsMessage =
         "Savings cannot be estimated because you do not currently own a car.";
+    } else if (estimatedSavings > 0) {
+      savingsMessage = `You could save around $${estimatedSavings} per month by switching to an EV.`;
     } else {
-      estimatedSavings = Number((payload.monthly_fuel_spend - estimatedEvCost).toFixed(2));
-
-      if (estimatedSavings > 0) {
-        savingsMessage = `You could save around $${estimatedSavings} per month by switching to an EV.`;
-      } else {
-        estimatedSavings = 0;
-        savingsMessage ="Based on your current driving pattern, switching savings appear limited.";
-      }
+      savingsMessage ="Based on your current driving pattern, switching savings appear limited.";
     }
 
     return {

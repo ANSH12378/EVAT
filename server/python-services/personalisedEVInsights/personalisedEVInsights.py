@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from typing import Union, List
-from fastapi import HTTPException
+from common.errors import InvalidInputError
 
 from personalisedEVInsights.scoring import calculate_suitability
 
@@ -48,43 +48,44 @@ def predict(payload: Union[dict, List[dict]]):
     Extra fields are ignored.
     Returns the existing driver cluster plus the 013S1 suitability result.
     """
+
+    # Accept single object or list of objects; standardise to list
+    if isinstance(payload, dict):
+        records = [payload]
+        single = True
+
+    elif isinstance(payload, list):
+        records = payload
+        single = False
+
+    else:
+        raise InvalidInputError("Invalid JSON payload.")
+
+    df = pd.DataFrame(records)
+    df = coerce_types(df)
+
+    # Convert to numpy with mixed types; kmodes handles categoricals as strings
+    X = df.to_numpy()
+
+    # Predict
+    clusters = kproto.predict(
+        X,
+        categorical=CAT_COLS,
+    )
+
     try:
-
-        # Accept single object or list of objects; standardise to list
-        if isinstance(payload, dict):
-            records = [payload]
-            single = True
-        elif isinstance(payload, list):
-            records = payload
-            single = False
-        else:
-            raise HTTPException(status_code=400, detail="Invalid JSON payload")
-
-        df = pd.DataFrame(records)
-        df = coerce_types(df)
-
-        # Convert to numpy with mixed types; kmodes handles categoricals as strings
-        X = df.to_numpy()
-
-        # Predict
-        clusters = kproto.predict(X, categorical=CAT_COLS)
         suitability_results = [calculate_suitability(record) for record in records]
+    except ValueError as error:
+        raise InvalidInputError(str(error)) from error
 
-        # Return single prediction if input was a single object
-        if single:
-            return {
-                "cluster": int(clusters[0]),
-                "suitability": suitability_results[0],
-            }
-        else:
-            return {
-                "clusters": [int(c) for c in clusters],
-                "suitability": suitability_results,
-            }
+    # Return single prediction if input was a single object
+    if single:
+        return {
+            "cluster": int(clusters[0]),
+            "suitability": suitability_results[0],
+        }
 
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e)) from e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "clusters": [int(c) for c in clusters],
+        "suitability": suitability_results,
+    }

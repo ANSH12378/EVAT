@@ -64,3 +64,9 @@ def test_existing_ev_owner_does_not_receive_switching_benefits():
 def test_invalid_numeric_input_is_rejected():
     with pytest.raises(ValueError, match="weekly_km cannot be negative"):
         calculate_suitability(payload(weekly_km=-1))
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_non_finite_numeric_input_is_rejected(value):
+    with pytest.raises(ValueError, match="weekly_km must be finite"):
+        calculate_suitability(payload(weekly_km=value))

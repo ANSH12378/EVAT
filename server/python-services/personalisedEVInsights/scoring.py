@@ -5,6 +5,7 @@ adoption. Keeping the assumptions and component scores in the response makes
 the recommendation auditable and suitable for dashboards.
 """
 
+import math
 from typing import Any, Dict
 
 
@@ -33,6 +34,8 @@ def _number(payload: Dict[str, Any], key: str) -> float:
         value = float(payload.get(key, 0))
     except (TypeError, ValueError) as error:
         raise ValueError(f"{key} must be a number") from error
+    if not math.isfinite(value):
+        raise ValueError(f"{key} must be finite")
     if value < 0:
         raise ValueError(f"{key} cannot be negative")
     return value
