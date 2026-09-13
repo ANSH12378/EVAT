@@ -20,7 +20,7 @@ initial gaps and proposes a lightweight versioning approach.
 | Price prediction | Saved-artifact inference | `price_best_model_latest.joblib` and related artefacts | Complete training pipeline is not available in this repository | Artefact provenance, feature schema, validation, and replacement instructions need recording |
 | Personalised EV insights | Saved-artifact inference | `kproto_bundle.pkl` | Complete training pipeline is not available in this repository | Artefact provenance and required training assets need recording |
 | Demand forecasting | Saved-artifact inference | `ev_demand_model.pkl` | Complete training pipeline is not available in this repository | Artefact provenance and required training assets need recording |
-| Charging recommendation | Deterministic filtering and weighted scoring | Runtime request and station data | Not a trained model | Version rules, weights, configuration, and unit tests |
+| Charging recommendation | Trained preference model with heuristic fallback adjustment | Runtime request, station data, and trained preference-model artefact | Preference-model integration introduced in PR #30; model retrained for the current runtime in PR #59 | Record model/version or commit reference, training-data source/version, training date, evaluation results, heuristic fallback configuration, and tests |
 | Reliability scoring | Deterministic scoring | `EVAT-Final-Enriched.csv` and source code | Not a trained model | Version data source, scoring weights, configuration, and tests |
 
 ## Initial reproducibility gaps
