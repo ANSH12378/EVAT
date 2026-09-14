@@ -14,6 +14,7 @@ import ChatBubble from "../components/ChatBubble";
 import ChargerSideBar from '../components/ChargerSideBar';
 import FloatingVoiceAssistant from '../components/FloatingVoiceAssistant';
 import ChargingRecommendations from '../components/ChargingRecommendations';
+import { NearbyPlacesProvider } from '../context/NearbyPlacesContext';
 // styles
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -491,6 +492,7 @@ useEffect(() => {
   return (
     <div className={`map-page ${isDark ? "dark" : ""}`}>
       <NavBar />
+      <NearbyPlacesProvider station={selectedStation}>
       <div className='container-map'>
         <button
           className="btn btn-primary btn-filter btn-small"
@@ -603,7 +605,7 @@ useEffect(() => {
             selectedStation={selectedStation}
             onSelectStation={(st) => setSelectedStation(st)}
           />
-          <NearbyPlaceMarkers selectedStation={selectedStation} />
+          <NearbyPlaceMarkers />
           <LocateUser />
         </MapContainer>
 
@@ -642,6 +644,7 @@ useEffect(() => {
         {/* Existing chat bubble (kept as is) */}
         <ChatBubble />
       </div>
+      </NearbyPlacesProvider>
     </div>
   );
 }

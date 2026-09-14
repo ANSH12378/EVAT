@@ -58,11 +58,19 @@ export default class NearbyPlaceService {
     PHOTO_CACHE_TTL_MS,
     PHOTO_CACHE_MAX
   );
+  /** Coalesce concurrent cache misses so parallel callers share one Google request. */
+  private readonly inFlightPlaces = new Map<string, Promise<NearbyPlace[]>>();
+  private readonly inFlightPhotos = new Map<
+    string,
+    Promise<{ bytes: Buffer; contentType: string }>
+  >();
 
   /** Test helper — clears in-memory caches. */
   clearCaches(): void {
     this.placesCache.clear();
     this.photoCache.clear();
+    this.inFlightPlaces.clear();
+    this.inFlightPhotos.clear();
   }
 
   private validateCoordinates(latitude: number, longitude: number) {
@@ -85,6 +93,33 @@ export default class NearbyPlaceService {
     return Math.min(radius, MAX_RADIUS_KM);
   }
 
+  private async loadPlacesOnce(
+    cacheKey: string,
+    loader: () => Promise<NearbyPlace[]>
+  ): Promise<NearbyPlace[]> {
+    const cached = this.placesCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const existing = this.inFlightPlaces.get(cacheKey);
+    if (existing) {
+      return existing;
+    }
+
+    const pending = loader()
+      .then((places) => {
+        this.placesCache.set(cacheKey, places);
+        return places;
+      })
+      .finally(() => {
+        this.inFlightPlaces.delete(cacheKey);
+      });
+
+    this.inFlightPlaces.set(cacheKey, pending);
+    return pending;
+  }
+
   async getNearbyPlaces(
     latitude: number,
     longitude: number,
@@ -96,19 +131,14 @@ export default class NearbyPlaceService {
     const normalizedCategory = normalizeCategory(category);
     const cacheKey = placesCacheKey(latitude, longitude, radius, normalizedCategory);
 
-    const cached = this.placesCache.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    const places = await GoogleNearbyPlacesService.findNearbyPlaces(
-      latitude,
-      longitude,
-      radius * 1000,
-      normalizedCategory
+    return this.loadPlacesOnce(cacheKey, () =>
+      GoogleNearbyPlacesService.findNearbyPlaces(
+        latitude,
+        longitude,
+        radius * 1000,
+        normalizedCategory
+      )
     );
-    this.placesCache.set(cacheKey, places);
-    return places;
   }
 
   async getNearbyForStation(
@@ -124,30 +154,25 @@ export default class NearbyPlaceService {
     const normalizedCategory = normalizeCategory(category);
     const cacheKey = stationCacheKey(stationId, radius, normalizedCategory);
 
-    const cached = this.placesCache.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
+    return this.loadPlacesOnce(cacheKey, async () => {
+      const station = await ChargingStationRepository.findById(stationId);
+      if (!station) {
+        throw new Error("Charging station not found");
+      }
 
-    const station = await ChargingStationRepository.findById(stationId);
-    if (!station) {
-      throw new Error("Charging station not found");
-    }
+      const coords = stationCoordinates(station);
+      if (!coords) {
+        throw new Error("Station location is unavailable");
+      }
 
-    const coords = stationCoordinates(station);
-    if (!coords) {
-      throw new Error("Station location is unavailable");
-    }
-
-    const places = await this.getNearbyPlaces(
-      coords.latitude,
-      coords.longitude,
-      radius,
-      normalizedCategory
-    );
-    // Also key by station id so reopen/filter hits skip the DB lookup.
-    this.placesCache.set(cacheKey, places);
-    return places;
+      // Reuse the coords-keyed path so lat/lon and station callers share results.
+      return this.getNearbyPlaces(
+        coords.latitude,
+        coords.longitude,
+        radius,
+        normalizedCategory
+      );
+    });
   }
 
   async getPhotoUri(photoName: string): Promise<string> {
@@ -165,16 +190,28 @@ export default class NearbyPlaceService {
       return cached;
     }
 
-    const photoUri = await this.getPhotoUri(photoName);
-    const response = await axios.get(photoUri, {
-      responseType: "arraybuffer",
-      timeout: 8000,
+    const existing = this.inFlightPhotos.get(photoName);
+    if (existing) {
+      return existing;
+    }
+
+    const pending = (async () => {
+      const photoUri = await this.getPhotoUri(photoName);
+      const response = await axios.get(photoUri, {
+        responseType: "arraybuffer",
+        timeout: 8000,
+      });
+      const photo = {
+        bytes: Buffer.from(response.data),
+        contentType: String(response.headers["content-type"] || "image/jpeg"),
+      };
+      this.photoCache.set(photoName, photo);
+      return photo;
+    })().finally(() => {
+      this.inFlightPhotos.delete(photoName);
     });
-    const photo = {
-      bytes: Buffer.from(response.data),
-      contentType: String(response.headers["content-type"] || "image/jpeg"),
-    };
-    this.photoCache.set(photoName, photo);
-    return photo;
+
+    this.inFlightPhotos.set(photoName, pending);
+    return pending;
   }
 }

@@ -61,6 +61,25 @@ describe("nearby-place-service", () => {
       expect(GoogleNearbyPlacesService.findNearbyPlaces).toHaveBeenCalledTimes(2);
     });
 
+    test("Case: Coalesces concurrent cache misses into one Google call", async () => {
+      let resolvePlaces: (value: any) => void = () => undefined;
+      (GoogleNearbyPlacesService.findNearbyPlaces as any).mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolvePlaces = resolve;
+          })
+      );
+
+      const first = service.getNearbyPlaces(-37.8136, 144.9631, 1, "all");
+      const second = service.getNearbyPlaces(-37.8136, 144.9631, 1, "all");
+      resolvePlaces([{ id: "shared" }]);
+
+      const [a, b] = await Promise.all([first, second]);
+      expect(a).toEqual([{ id: "shared" }]);
+      expect(b).toEqual([{ id: "shared" }]);
+      expect(GoogleNearbyPlacesService.findNearbyPlaces).toHaveBeenCalledTimes(1);
+    });
+
     test("Case: Rejects invalid coordinates", async () => {
       await expect(service.getNearbyPlaces(200, 144.96)).rejects.toThrow(
         "latitude must be between -90 and 90"

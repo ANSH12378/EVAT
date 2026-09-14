@@ -1,8 +1,7 @@
-import { useContext, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
-import { UserContext } from "../context/user";
-import { getPlacesForStation, getNearbyPlaces } from "../services/nearbyPlaceService";
+import { useNearbyPlaces } from "../context/NearbyPlacesContext";
 
 const CATEGORY_EMOJI = {
   food: "🍽️",
@@ -26,13 +25,6 @@ function placeIcon(category) {
     iconAnchor: [17, 17],
     popupAnchor: [0, -18],
   });
-}
-
-function stationCoords(station) {
-  const latitude = Number(station?.latitude ?? station?.location?.coordinates?.[1]);
-  const longitude = Number(station?.longitude ?? station?.location?.coordinates?.[0]);
-  if (Number.isNaN(latitude) || Number.isNaN(longitude)) return null;
-  return { latitude, longitude };
 }
 
 function escapeHtml(value) {
@@ -69,14 +61,13 @@ function buildPopupHtml(place) {
 }
 
 /**
- * Renders food/shopping markers around the selected charger.
- * Cleared when the sidebar selection is closed.
+ * Renders food/shopping markers from the shared NearbyPlacesContext fetch.
+ * Cleared when the sidebar selection is closed / places list empties.
  */
-export default function NearbyPlaceMarkers({ selectedStation }) {
+export default function NearbyPlaceMarkers() {
   const map = useMap();
-  const { user } = useContext(UserContext);
+  const { places } = useNearbyPlaces();
   const layerRef = useRef(null);
-  const requestIdRef = useRef(0);
 
   useEffect(() => {
     layerRef.current = L.layerGroup().addTo(map);
@@ -90,66 +81,26 @@ export default function NearbyPlaceMarkers({ selectedStation }) {
 
   useEffect(() => {
     const layer = layerRef.current;
-    if (!layer) return undefined;
+    if (!layer) return;
 
     layer.clearLayers();
 
-    if (!selectedStation || !user?.token) {
-      return undefined;
-    }
+    places.forEach((place) => {
+      const lat = Number(place.latitude);
+      const lng = Number(place.longitude);
+      if (Number.isNaN(lat) || Number.isNaN(lng)) return;
 
-    const abortController = new AbortController();
-    const requestId = ++requestIdRef.current;
-
-    const loadPlaces = async () => {
-      try {
-        const options = {
-          category: "all",
-          radiusKm: 1,
-          token: user.token,
-          signal: abortController.signal,
-        };
-
-        let response;
-        if (selectedStation._id) {
-          response = await getPlacesForStation(selectedStation._id, options);
-        } else {
-          const coords = stationCoords(selectedStation);
-          if (!coords) return;
-          response = await getNearbyPlaces(coords.latitude, coords.longitude, options);
-        }
-
-        if (requestId !== requestIdRef.current) return;
-
-        const places = response.data?.places || [];
-        places.forEach((place) => {
-          const lat = Number(place.latitude);
-          const lng = Number(place.longitude);
-          if (Number.isNaN(lat) || Number.isNaN(lng)) return;
-
-          const marker = L.marker([lat, lng], {
-            icon: placeIcon(place.category),
-            zIndexOffset: 200,
-          });
-          marker.bindPopup(buildPopupHtml(place), {
-            maxWidth: 260,
-            className: "nearby-place-popup-container",
-          });
-          layer.addLayer(marker);
-        });
-      } catch (err) {
-        if (err?.name === "AbortError") return;
-        console.error("Failed to load nearby place markers:", err);
-      }
-    };
-
-    loadPlaces();
-
-    return () => {
-      abortController.abort();
-      layer.clearLayers();
-    };
-  }, [selectedStation, user?.token, map]);
+      const marker = L.marker([lat, lng], {
+        icon: placeIcon(place.category),
+        zIndexOffset: 200,
+      });
+      marker.bindPopup(buildPopupHtml(place), {
+        maxWidth: 260,
+        className: "nearby-place-popup-container",
+      });
+      layer.addLayer(marker);
+    });
+  }, [places, map]);
 
   return null;
 }

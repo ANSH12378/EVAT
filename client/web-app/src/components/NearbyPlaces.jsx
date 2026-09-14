@@ -1,11 +1,8 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { MapPin, Store, ExternalLink } from "lucide-react";
 import { UserContext } from "../context/user";
-import {
-  getNearbyPlaces,
-  getPlacesForStation,
-  fetchPlacePhotoObjectUrl,
-} from "../services/nearbyPlaceService";
+import { useNearbyPlaces } from "../context/NearbyPlacesContext";
+import { fetchPlacePhotoObjectUrl } from "../services/nearbyPlaceService";
 
 const CATEGORIES = [
   { id: "all", label: "All" },
@@ -106,7 +103,6 @@ function PlaceCard({ place, token, eager }) {
       },
       {
         root: null,
-        // Start loading a little before the card enters the viewport.
         rootMargin: "120px 0px",
         threshold: 0.01,
       }
@@ -160,60 +156,17 @@ function PlaceCard({ place, token, eager }) {
   );
 }
 
-export default function NearbyPlaces({ station }) {
+export default function NearbyPlaces() {
   const { user } = useContext(UserContext);
   const token = user?.token;
-  const [places, setPlaces] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { places, loading, error } = useNearbyPlaces();
   const [category, setCategory] = useState("all");
   const [expanded, setExpanded] = useState(true);
 
-  useEffect(() => {
-    if (!station) {
-      setPlaces([]);
-      return undefined;
-    }
-
-    const abortController = new AbortController();
-    let cancelled = false;
-
-    const loadPlaces = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const options = { category, token, signal: abortController.signal };
-        let response;
-
-        if (station._id) {
-          response = await getPlacesForStation(station._id, options);
-        } else {
-          const latitude = Number(station.latitude ?? station.location?.coordinates?.[1]);
-          const longitude = Number(station.longitude ?? station.location?.coordinates?.[0]);
-          if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
-            throw new Error("This station has no location data.");
-          }
-          response = await getNearbyPlaces(latitude, longitude, options);
-        }
-
-        if (cancelled) return;
-        setPlaces(response.data?.places || []);
-      } catch (err) {
-        if (cancelled || err?.name === "AbortError") return;
-        setPlaces([]);
-        setError(err.message || "Unable to load nearby places.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    loadPlaces();
-
-    return () => {
-      cancelled = true;
-      abortController.abort();
-    };
-  }, [station, category, token]);
+  const filteredPlaces = useMemo(() => {
+    if (category === "all") return places;
+    return places.filter((place) => place.category === category);
+  }, [places, category]);
 
   return (
     <div>
@@ -228,7 +181,7 @@ export default function NearbyPlaces({ station }) {
           Nearby Food & Stores
         </span>
         <span className="text-tiny">
-          {expanded ? "Hide" : `${places.length || ""} Show`}
+          {expanded ? "Hide" : `${filteredPlaces.length || ""} Show`}
         </span>
       </button>
 
@@ -253,14 +206,14 @@ export default function NearbyPlaces({ station }) {
 
           {loading && <div className="font-italic text-small">Finding nearby places...</div>}
           {!loading && error && <div className="font-italic text-small">{error}</div>}
-          {!loading && !error && places.length === 0 && (
+          {!loading && !error && filteredPlaces.length === 0 && (
             <div className="font-italic text-small">
               No restaurants or stores found within walking distance of this charger.
             </div>
           )}
 
           {!loading &&
-            places.map((place, index) => (
+            filteredPlaces.map((place, index) => (
               <PlaceCard
                 key={place.id}
                 place={place}
