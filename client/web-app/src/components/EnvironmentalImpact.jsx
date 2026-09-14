@@ -306,62 +306,63 @@ export default function EnvironmentalImpact({
 
   const [evMake, setEvMake] = useState("Select");
   const [evModel, setEvModel] = useState("Select");
-  const [evVariant, setEvVariant] =
-    useState("Select");
-  const [evYear, setEvYear] =
-    useState("Select");
+  const [evVariant, setEvVariant] = useState("Select");
+  const [evYear, setEvYear] = useState("Select");
 
-  const [iceMake, setIceMake] =
-    useState("Select");
-  const [iceModel, setIceModel] =
-    useState("Select");
-  const [iceVariant, setIceVariant] =
-    useState("Select");
-  const [iceYear, setIceYear] =
-    useState("Select");
+  const [iceMake, setIceMake] = useState("Select");
+  const [iceModel, setIceModel] = useState("Select");
+  const [iceVariant, setIceVariant] = useState("Select");
+  const [iceYear, setIceYear] = useState("Select");
 
   useEffect(() => {
-    if (!user?.token) return;
+    (async () => {
+      if (!user?.token) return;
 
-    fetch(`${API_URL}/ice-vehicle`, {
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-      },
-    })
-      .then((res) => {
-        if (!res.ok)
-          throw new Error(
-            "Failed to load ICE vehicles"
-          );
-
-        return res.json();
+      fetch(`${API_URL}/ice-vehicle`, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
       })
-      .then((data) =>
-        setIceVehicles(data.data || [])
-      )
-      .catch((err) =>
-        setError(err.message)
-      );
+        .then((res) => {
+          if (!res.ok)
+            throw new Error(
+              "Failed to load ICE vehicles"
+            );
+
+          return res.json();
+        })
+        .then((data) => {
+          setIceVehicles((data.data || []).map((v) => ({
+            ...v,
+            id: v.id || v._id,
+            year: v.year || v.model_release_year,
+          })).filter(
+            (v) => v.fuel_type && v.fuel_type !== "Pure Electric"
+          ));
+        })
+        .catch((err) =>
+          setError(err.message)
+        );
+    })();
   }, [user?.token]);
 
   const options = (
     vehicles,
     field,
     filters = {}
-  ) =>
-    [
-      ...new Set(
-        vehicles
-          .filter((v) =>
-            Object.entries(filters).every(
-              ([key, value]) =>
-                v[key] === value
-            )
+  ) => [
+    ...new Set(
+      vehicles
+        .filter((v) =>
+          Object.entries(filters).every(
+            ([key, value]) =>
+              v[key] === value
           )
-          .map((v) => v[field])
-          .filter(Boolean)
-      ),
-    ];
+        )
+        .map((v) => v[field])
+        .filter(Boolean)
+    ),
+  ];
 
   const evModels = useMemo(
     () =>

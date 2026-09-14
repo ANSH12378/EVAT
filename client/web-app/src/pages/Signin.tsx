@@ -163,7 +163,7 @@ function Signin() {
         console.error('JWT login error: ', err);
       };
     })();
-  });
+  }, []);
   
   //UI Rendering
   return (
