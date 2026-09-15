@@ -70,7 +70,7 @@ It's useful to have both methods available to you, so let's go through them now.
     
 12. Before you click **Done**, **save your connection string**. It is the text that has been partially de-identified in the above screenshot.
     
-13. Next we need to restore the backup database to this one that we just created. To do this, you will need to install [MongoDB tools](tools) and download a copy of the [database data](https://deakin365.sharepoint.com/sites/Chameleon2/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FChameleon2%2FShared%20Documents%2FProject%20%2D%20EV%20Adoption%20Tools%20%28EVAT%29%2FDatabase%5FData%2Ezip&parent=%2Fsites%2FChameleon2%2FShared%20Documents%2FProject%20%2D%20EV%20Adoption%20Tools%20%28EVAT%29). 
+13. Next we need to restore the backup database to this one that we just created. To do this, you will need to install [MongoDB tools](https://www.mongodb.com/try/download/database-tools) and download a copy of the [database data](https://deakin365.sharepoint.com/sites/Chameleon2/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FChameleon2%2FShared%20Documents%2FProject%20%2D%20EV%20Adoption%20Tools%20%28EVAT%29%2FDatabase%5FData%2Ezip&parent=%2Fsites%2FChameleon2%2FShared%20Documents%2FProject%20%2D%20EV%20Adoption%20Tools%20%28EVAT%29).
 
 14. Unzip the backup archive somewhere on your system, open a new terminal in the directory that contains the `dump` directory of the extracted archive, and run the command `mongorestore --uri <your_connection_uri_here> dump/`
 15. To verify the process was successful, open MongoDB Compass, select **New Connection** (or the '+' button), paste in your URI string and click **Save & Connect**:
@@ -132,7 +132,7 @@ EMAIL_PASS=
 ADMIN_EMAIL=
 
 PYTHON_API_URL=http://127.0.0.1:5000
-RELIABILITY_API_URL=http://127.0.0.1:8003
+RELIABILITY_API_URL=http://127.0.0.1:5000/reliability
 ```
 
 Now, let's figure out how to populate each missing value!
@@ -155,6 +155,17 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 6. At the top of the page search for 'Credentials' and click on it
 7. Click 'Create Credentials' then 'API key'
 8. Copy the API key into the `.env` file for `GOOGLE_MAPS_API_KEY="Key"`
+
+The frontend needs a second Google Maps API key because browser keys use different security restrictions from backend keys:
+
+1. In the same Google Cloud project, enable the **Maps JavaScript API** if it is not already enabled.
+2. Return to **APIs & Services → Credentials**, select **Create Credentials → API key**, and create a second key.
+3. Edit the new key and set **Application restrictions** to **Websites** (HTTP referrers).
+4. Add your local frontend address, such as `http://localhost:5173/*`. Add the deployed website's URL as another allowed referrer if you will use the key outside local development.
+5. Under **API restrictions**, restrict the key to the **Maps JavaScript API** and the Places APIs enabled above.
+6. Save the key for `VITE_GOOGLE_MAPS_API_KEY` in the frontend `.env` file described below.
+
+If you're having trouble with this, you *can* use the same API key for frontend and backend in a development environment, but it's good practice to set up a separate one.
 
 ##### EMAIL_USER and EMAIL_PASS
 The server uses Nodemailer to send admin 2FA codes. For the development environment, it is set up to work with Gmail sending to a fixed address. `EMAIL_USER` is the account these emails are sent **from**; you'll use your Gmail account to do so.
@@ -183,13 +194,14 @@ All aliased emails will deliver to your main inbox, but will show which ‘+’ 
 
 Thankfully, this one is much simpler 🙂
 
-1. Navigate to the /client/web-app subdirectory
-2. Create a new `.env` file
-3. Paste the following into it:
-4. Go to the EVAT-Website directory
-5. Right click and select new >text document and rename to create a `.env` file and paste the following into it: `VITE_API_URL=http://localhost:8080/api`
+1. Navigate to the `/client/web-app` subdirectory.
+2. Create a new `.env` file.
+3. Paste the following into it, replacing the placeholder with the browser-restricted Google Maps API key created above:
 
-That's it!
+```env
+VITE_API_URL=http://localhost:8080/api
+VITE_GOOGLE_MAPS_API_KEY=your_browser_restricted_api_key
+```
 
 #### Root folder setup
 There is *one* more `.env` file to set up, to be placed in the root directory of the repository. This one is also very simple.
@@ -205,24 +217,9 @@ VITE_API_URL=http://localhost:${PORT}/api
 ```
 
 ### Python Services Setup
-The last thing we need to do is install a few things so the Python environment works properly.
+The Python services require Python 3.12, but the standard local application setup does not require a separate Python installation. `uv` manages the project's Python environment and will automatically download a compatible Python 3.12 interpreter if one is not already available.
 
-Install Python by [downloading it directly](https://www.python.org/downloads/), or installing it via a package manager, e.g.:
-```bash
-# Linux
-sudo apt install python3
-
-# macOS with Homebrew
-brew install python
-```
-
-Verify it's installed by typing `python3` into the command line. If it's installed, you'll get a command prompt:
-
-![Running the Python interpreter in the terminal](images/terminal-python-interpreter.png)
-
-Type `exit()` to get back out of this.
-
-You'll also need uv, which is a Python project manager that EVAT uses to manage Python libraries. Install it by [downloading it directly](https://docs.astral.sh/uv/getting-started/installation/), or  from the command line:
+Install `uv` by [downloading it directly](https://docs.astral.sh/uv/getting-started/installation/), or from the command line:
 ```shell
 # macOS with Homebrew
 brew install uv
