@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { MapPin, Store, ExternalLink } from "lucide-react";
 import { UserContext } from "../context/user";
 import { useNearbyPlaces } from "../context/NearbyPlacesContext";
@@ -159,14 +159,8 @@ function PlaceCard({ place, token, eager }) {
 export default function NearbyPlaces() {
   const { user } = useContext(UserContext);
   const token = user?.token;
-  const { places, loading, error } = useNearbyPlaces();
-  const [category, setCategory] = useState("all");
+  const { places, loading, error, category, setCategory } = useNearbyPlaces();
   const [expanded, setExpanded] = useState(true);
-
-  const filteredPlaces = useMemo(() => {
-    if (category === "all") return places;
-    return places.filter((place) => place.category === category);
-  }, [places, category]);
 
   return (
     <div>
@@ -181,7 +175,7 @@ export default function NearbyPlaces() {
           Nearby Food & Stores
         </span>
         <span className="text-tiny">
-          {expanded ? "Hide" : `${filteredPlaces.length || ""} Show`}
+          {expanded ? "Hide" : `${places.length || ""} Show`}
         </span>
       </button>
 
@@ -206,14 +200,14 @@ export default function NearbyPlaces() {
 
           {loading && <div className="font-italic text-small">Finding nearby places...</div>}
           {!loading && error && <div className="font-italic text-small">{error}</div>}
-          {!loading && !error && filteredPlaces.length === 0 && (
+          {!loading && !error && places.length === 0 && (
             <div className="font-italic text-small">
               No restaurants or stores found within walking distance of this charger.
             </div>
           )}
 
           {!loading &&
-            filteredPlaces.map((place, index) => (
+            places.map((place, index) => (
               <PlaceCard
                 key={place.id}
                 place={place}

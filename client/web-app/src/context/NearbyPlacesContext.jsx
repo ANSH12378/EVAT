@@ -7,6 +7,8 @@ export const NearbyPlacesContext = createContext({
   places: [],
   loading: false,
   error: "",
+  category: "all",
+  setCategory: () => {},
 });
 
 function stationCoords(station) {
@@ -16,9 +18,14 @@ function stationCoords(station) {
   return { latitude, longitude };
 }
 
+function stationKey(station) {
+  if (!station) return null;
+  return station._id || `${station.latitude},${station.longitude}`;
+}
+
 /**
- * Single fetch for the selected charger (category=all).
- * Sidebar and map markers both consume this so we don't double-hit Google Places.
+ * Single shared Places fetch for sidebar + map markers.
+ * Category changes refetch with that Google includedTypes list (not a client-only filter of "all").
  */
 export function NearbyPlacesProvider({ station, children }) {
   const { user } = useContext(UserContext);
@@ -26,6 +33,16 @@ export function NearbyPlacesProvider({ station, children }) {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [category, setCategory] = useState("all");
+  const selectedStationKey = stationKey(station);
+  const [categoryStationKey, setCategoryStationKey] = useState(selectedStationKey);
+
+  // Reset category synchronously when the selected charger changes so we don't
+  // briefly fetch the previous category for the new station.
+  if (selectedStationKey !== categoryStationKey) {
+    setCategoryStationKey(selectedStationKey);
+    setCategory("all");
+  }
 
   useEffect(() => {
     if (!station || !token) {
@@ -38,12 +55,16 @@ export function NearbyPlacesProvider({ station, children }) {
     const abortController = new AbortController();
     let cancelled = false;
 
+    // Clear previous charger/category markers immediately so the map is not
+    // paired with stale directions while the next request is in flight.
+    setPlaces([]);
+    setLoading(true);
+    setError("");
+
     const loadPlaces = async () => {
-      setLoading(true);
-      setError("");
       try {
         const options = {
-          category: "all",
+          category,
           radiusKm: 1,
           token,
           signal: abortController.signal,
@@ -77,11 +98,11 @@ export function NearbyPlacesProvider({ station, children }) {
       cancelled = true;
       abortController.abort();
     };
-  }, [station, token]);
+  }, [station, selectedStationKey, token, category]);
 
   const value = useMemo(
-    () => ({ station, places, loading, error }),
-    [station, places, loading, error]
+    () => ({ station, places, loading, error, category, setCategory }),
+    [station, places, loading, error, category]
   );
 
   return (
