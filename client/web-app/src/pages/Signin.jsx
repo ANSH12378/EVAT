@@ -65,8 +65,10 @@ function Signin() {
       const data = await response.json();
       if (response.ok) {
         // Extract access token from possibly nested structure
-        const accessToken =
-          data?.data?.accessToken?.accessToken || data?.data?.accessToken;
+        const tokenData = data?.data?.accessToken;
+        const accessToken = tokenData?.accessToken || tokenData;
+        const refreshToken =
+          tokenData?.refreshToken || data?.data?.refreshToken;
 
         if (!accessToken) {
           setError('Login succeeded but no access token was returned.');
@@ -93,6 +95,7 @@ function Signin() {
                     `${data?.data?.user?.firstName || ''} ${data?.data?.user?.lastName || ''}`.trim(),
           mobile: data?.data?.user?.mobile,
           token: accessToken,
+          refreshToken,
           createdAt: data?.data?.user?.createdAt,
           avatarURL: profileData?.data?.avatarURL,
         };

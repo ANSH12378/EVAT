@@ -195,11 +195,13 @@ export default class UserController {
     }
 
     try {
-      const { accessToken } = await this.userService.refreshAccessToken(refreshToken);
+      const { accessToken, refreshToken: newRefreshToken } =
+        await this.userService.refreshAccessToken(refreshToken);
       return res.status(200).json({
         message: "Token refreshed successfully",
         data: {
           accessToken,
+          refreshToken: newRefreshToken,
         },
       });
     } catch (error: any) {
