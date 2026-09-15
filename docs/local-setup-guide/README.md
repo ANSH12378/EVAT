@@ -126,6 +126,7 @@ MONGODB_URI=
 JWT_SECRET=
 
 GOOGLE_MAPS_API_KEY=
+GOOGLE_AI_API_KEY=
 
 EMAIL_USER=
 EMAIL_PASS=
@@ -138,7 +139,15 @@ RELIABILITY_API_URL=http://127.0.0.1:5000/reliability
 Now, let's figure out how to populate each missing value!
 
 ##### MONGODB_URI
-This is the connection string from the database setup above 🙂 - paste in the string (including the username and password) for either your private clone of the database or a shared database.
+This is the connection string from the database setup above 🙂. Paste in the string (including the username and password) for either your private clone of the database or a shared database.
+
+Before saving it, make sure the URI selects the `EVAT` database. Add `EVAT` between `.mongodb.net/` and the `?` that begins the connection options:
+
+```env
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/EVAT?retryWrites=true&w=majority
+```
+
+Do this for both private and shared database connections unless the supplied URI already includes `/EVAT`. Without it, the application may connect to an empty default `test` database instead of the restored EVAT data.
 
 ##### JWT_SECRET
 This is private hash that you create. With Node installed, you can generate one with the following command:
@@ -151,21 +160,30 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 2. Ensure you have a billing account and it is enabled ([https://console.cloud.google.com/billing/](https://console.cloud.google.com/billing/))
 3. Click the sidebar menu and go to 'API & Services'
 4. Click 'Enable APIs and services'
-5. Search for and enable 'Places API (New)', 'Places API', 'Distance Matrix API', and 'Directions API'
+5. Search for and enable 'Places API (New)', 'Places API', 'Distance Matrix API', 'Directions API', and 'Elevation API'
 6. At the top of the page search for 'Credentials' and click on it
 7. Click 'Create Credentials' then 'API key'
 8. Copy the API key into the `.env` file for `GOOGLE_MAPS_API_KEY="Key"`
 
 The frontend needs a second Google Maps API key because browser keys use different security restrictions from backend keys:
 
-1. In the same Google Cloud project, enable the **Maps JavaScript API** if it is not already enabled.
+1. In the same Google Cloud project, enable the **Maps JavaScript API** and **Geocoding API** if they are not already enabled.
 2. Return to **APIs & Services → Credentials**, select **Create Credentials → API key**, and create a second key.
 3. Edit the new key and set **Application restrictions** to **Websites** (HTTP referrers).
-4. Add your local frontend address, such as `http://localhost:5173/*`. Add the deployed website's URL as another allowed referrer if you will use the key outside local development.
-5. Under **API restrictions**, restrict the key to the **Maps JavaScript API** and the Places APIs enabled above.
+4. Add the local frontend address `http://localhost:3000/*`. Add the deployed website's URL as another allowed referrer if you will use the key outside local development.
+5. Under **API restrictions**, restrict the key to the **Maps JavaScript API**, **Geocoding API**, and the Places APIs enabled above.
 6. Save the key for `VITE_GOOGLE_MAPS_API_KEY` in the frontend `.env` file described below.
 
 If you're having trouble with this, you *can* use the same API key for frontend and backend in a development environment, but it's good practice to set up a separate one.
+
+##### GOOGLE_AI_API_KEY
+
+The backend uses the Gemini API to support natural-language navigation. To create the required API key:
+
+1. Open the [Google AI Studio API Keys page](https://aistudio.google.com/app/apikey).
+2. Ensure your EVAT project is imported by clicking **Import Projects** and confirming the project is ticked.
+3. Select **Create API key**. In the window that appears, ensure your EVAT project is selected from the dropdown.
+4. Copy the generated key into the appropriate `.env` file.
 
 ##### EMAIL_USER and EMAIL_PASS
 The server uses Nodemailer to send admin 2FA codes. For the development environment, it is set up to work with Gmail sending to a fixed address. `EMAIL_USER` is the account these emails are sent **from**; you'll use your Gmail account to do so.
@@ -202,6 +220,28 @@ Thankfully, this one is much simpler 🙂
 VITE_API_URL=http://localhost:8080/api
 VITE_GOOGLE_MAPS_API_KEY=your_browser_restricted_api_key
 ```
+
+#### Optional: enabling the EVAT-AI chatbot
+
+The EVAT-AI chatbot requires a Gemini API key in the frontend `.env` file:
+
+```env
+VITE_GEMINI_API_KEY=your_google_ai_api_key
+```
+
+This key is optional. If you leave it blank, the rest of the application will continue to work, but the EVAT-AI chatbot will be disabled.
+
+As of 15 September 2026, EVAT calls the Gemini API directly from the frontend. Vite includes variables beginning with `VITE_` in the JavaScript sent to the browser, which means this API key is visible through browser developer tools and can potentially be obtained by a bad actor with access to the web frontend.
+
+For local development, the practical risk is limited because the website is normally accessible only from your own computer. If you enable EVAT-AI:
+
+- Do not expose the local development server to a public network or internet tunnel.
+- Only use browser extensions that you trust - a malicious extension could potentially scrape this info.
+- Be aware that anyone who can access the running frontend may be able to copy the key and consume its quota or incur charges.
+- Revoke and replace the key if you believe it has been exposed.
+- Obviously, do not deploy to production with this key populated.
+
+The application should be updated to send Gemini requests through the backend before it is deployed, ensuring that the API key remains server-side.
 
 #### Root folder setup
 There is *one* more `.env` file to set up, to be placed in the root directory of the repository. This one is also very simple.
