@@ -2,11 +2,14 @@ import axios from "axios";
 import ChargingStationRepository from "../repositories/station-repository";
 import GoogleNearbyPlacesService, {
   NearbyPlace,
+  haversineMeters,
+  buildWalkingDirectionsUrl,
 } from "./google-nearby-places-service";
 import TtlCache from "../utils/ttl-cache";
 
 const DEFAULT_RADIUS_KM = 1;
 const MAX_RADIUS_KM = 3;
+const METERS_PER_WALKING_MINUTE = 80;
 
 /** Places results stay fresh for ~10 minutes to cut repeat Google Calls. */
 const PLACES_CACHE_TTL_MS = 10 * 60 * 1000;
@@ -37,7 +40,8 @@ function placesCacheKey(
   radiusKm: number,
   category: string
 ): string {
-  // ~11 m precision is enough so tiny float differences still hit the cache.
+  // Rounded key only buckets the expensive Google lookup. Origin-dependent
+  // fields are recomputed per request from the exact coordinates.
   return `places:${latitude.toFixed(4)}:${longitude.toFixed(4)}:${radiusKm}:${category}`;
 }
 
@@ -47,6 +51,47 @@ function stationCacheKey(
   category: string
 ): string {
   return `station:${stationId}:${radiusKm}:${category}`;
+}
+
+/**
+ * Recompute distance / walk time / directions for the exact request origin.
+ * Cached Google payloads may have been measured from a nearby rounded origin.
+ */
+export function withRequestOrigin(
+  places: NearbyPlace[],
+  originLat: number,
+  originLng: number
+): NearbyPlace[] {
+  return places
+    .map((place) => {
+      const placeLat = Number(place.latitude);
+      const placeLng = Number(place.longitude);
+      if (!Number.isFinite(placeLat) || !Number.isFinite(placeLng)) {
+        return { ...place };
+      }
+
+      const distanceMeters = Math.round(
+        haversineMeters(originLat, originLng, placeLat, placeLng)
+      );
+
+      return {
+        ...place,
+        latitude: placeLat,
+        longitude: placeLng,
+        distanceMeters,
+        walkingMinutes: Math.max(
+          1,
+          Math.round(distanceMeters / METERS_PER_WALKING_MINUTE)
+        ),
+        directionsUrl: buildWalkingDirectionsUrl(
+          originLat,
+          originLng,
+          placeLat,
+          placeLng
+        ),
+      };
+    })
+    .sort((a, b) => a.distanceMeters - b.distanceMeters);
 }
 
 export default class NearbyPlaceService {
@@ -131,7 +176,7 @@ export default class NearbyPlaceService {
     const normalizedCategory = normalizeCategory(category);
     const cacheKey = placesCacheKey(latitude, longitude, radius, normalizedCategory);
 
-    return this.loadPlacesOnce(cacheKey, () =>
+    const places = await this.loadPlacesOnce(cacheKey, () =>
       GoogleNearbyPlacesService.findNearbyPlaces(
         latitude,
         longitude,
@@ -139,6 +184,8 @@ export default class NearbyPlaceService {
         normalizedCategory
       )
     );
+
+    return withRequestOrigin(places, latitude, longitude);
   }
 
   async getNearbyForStation(
@@ -165,7 +212,8 @@ export default class NearbyPlaceService {
         throw new Error("Station location is unavailable");
       }
 
-      // Reuse the coords-keyed path so lat/lon and station callers share results.
+      // Reuse the coords-keyed path so lat/lon and station callers share Google results.
+      // getNearbyPlaces remaps distances/directions to this station's exact coords.
       return this.getNearbyPlaces(
         coords.latitude,
         coords.longitude,
