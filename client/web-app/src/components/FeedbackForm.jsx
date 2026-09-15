@@ -68,17 +68,12 @@ function FeedbackForm() {
     setError('');
     setSuccess('');
 
-    const sanitizedSuggestion = DOMPurify.sanitize(suggestion);
-
     try {
-      if (sanitizedSuggestion.trim() === '') {
-        throw new Error("Cannot submit feedback with potentially malicious Javascript/HTML.");
-      }
-
+      console.log(name + email + suggestion);
       const response = await submitFeedback({
           name: name,
           email: email,
-          suggestion: sanitizedSuggestion,
+          suggestion: suggestion,
         });
       console.log('Feedback submitted successfully:', response);
       // Clear success message after 5 seconds
