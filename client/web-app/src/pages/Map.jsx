@@ -8,11 +8,13 @@ import { getChargers, getConnectorTypes, getOperatorTypes } from '../services/ch
 import NavBar from '../components/NavBar';
 import LocateUser from '../components/LocateUser';
 import ClusterMarkers from '../components/ClusterMarkers';
+import NearbyPlaceMarkers from '../components/NearbyPlaceMarkers';
 import SmartFilter from '../components/SmartFilter';
 import ChatBubble from "../components/ChatBubble";
 import ChargerSideBar from '../components/ChargerSideBar';
 import FloatingVoiceAssistant from '../components/FloatingVoiceAssistant';
 import ChargingRecommendations from '../components/ChargingRecommendations';
+import { NearbyPlacesProvider } from '../context/NearbyPlacesContext';
 // styles
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -481,104 +483,107 @@ useEffect(() => {
   return (
     <>
       <NavBar />
-      <div className="relative h-(--content-height) overflow-auto [&~#evchatbubble-btn]:[--evchatbubble-button-bottom:--spacing(16)] [&~#evchatbubble-btn]:[--evchatbubble-button-bottom-md:--spacing(4)]">
-        {loading && bbox && (
-          <Banner type="info" className="absolute z-11 font-medium max-w-80 top-2 right-2 md:top-[unset] md:right-[unset] md:bottom-4 md:left-4">
-            Loading charging stations…
-          </Banner>
-        )}
-        {err && (
-          <Banner type="error" className="absolute z-11 font-medium max-w-80 top-2 right-2 md:top-[unset] md:right-[unset] md:bottom-4 md:left-4">
-            {err}
-          </Banner>
-        )}
-        {!bbox && !loading && user?.token && (
-          <Banner type="info" className="absolute z-11 font-medium max-w-80 top-2 right-2 md:top-[unset] md:right-[unset] md:bottom-4 md:left-4">
-            <div className="mb-1 font-semibold">
-              📍 Map Loading
-            </div>
-            <div className="text-sm">
-              Wait for map to load or move/zoom to search for chargers
-            </div>
-          </Banner>
-        )}
-        {!user?.token && (
-          <Banner type="warning" className="absolute z-11 font-medium max-w-80 top-2 right-2 md:top-[unset] md:right-[unset] md:bottom-4 md:left-4">
-            <div className="mb-1 font-semibold">
-              ⚠️ Login Required
-            </div>
-            <div className="text-sm">
-              Please log in to search for charging stations
-              Wait for map to load or move/zoom to search for chargers
-            </div>
-          </Banner>
-        )}
+      <NearbyPlacesProvider station={selectedStation}>
+        <div className="relative h-(--content-height) overflow-auto [&~#evchatbubble-btn]:[--evchatbubble-button-bottom:--spacing(16)] [&~#evchatbubble-btn]:[--evchatbubble-button-bottom-md:--spacing(4)]">
+          {loading && bbox && (
+            <Banner type="info" className="absolute z-11 font-medium max-w-80 top-2 right-2 md:top-[unset] md:right-[unset] md:bottom-4 md:left-4">
+              Loading charging stations…
+            </Banner>
+          )}
+          {err && (
+            <Banner type="error" className="absolute z-11 font-medium max-w-80 top-2 right-2 md:top-[unset] md:right-[unset] md:bottom-4 md:left-4">
+              {err}
+            </Banner>
+          )}
+          {!bbox && !loading && user?.token && (
+            <Banner type="info" className="absolute z-11 font-medium max-w-80 top-2 right-2 md:top-[unset] md:right-[unset] md:bottom-4 md:left-4">
+              <div className="mb-1 font-semibold">
+                📍 Map Loading
+              </div>
+              <div className="text-sm">
+                Wait for map to load or move/zoom to search for chargers
+              </div>
+            </Banner>
+          )}
+          {!user?.token && (
+            <Banner type="warning" className="absolute z-11 font-medium max-w-80 top-2 right-2 md:top-[unset] md:right-[unset] md:bottom-4 md:left-4">
+              <div className="mb-1 font-semibold">
+                ⚠️ Login Required
+              </div>
+              <div className="text-sm">
+                Please log in to search for charging stations
+                Wait for map to load or move/zoom to search for chargers
+              </div>
+            </Banner>
+          )}
 
-        <MapContainer
-          className="h-full z-10"
-          center={[-37.8136, 144.9631]}
-          zoom={13}
-          whenCreated={(mapInstance) => {
-            mapRef.current = mapInstance;
-          }}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="&copy; OpenStreetMap contributors"
-          />
-          <BoundsWatcher onChange={setBbox} />
-          <ClusterMarkers
-            showCongestion={filters.showCongestion}
-            stations={filteredStations}
-            selectedStation={selectedStation}
-            onSelectStation={(st) => setSelectedStation(st)}
-          />
-          <LocateUser />
-        </MapContainer>
-
-        {/* <button
-          className="btn btn-primary btn-dark-mode"
-          aria-label="Toggle dark mode"
-          onClick={() => setIsDark(prev => !prev)}
-          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-        >
-          {isDark ? '🌙' : '☀️'}
-        </button> */}
-
-        <div className="absolute z-11 left-3 bottom-18 md:bottom-[unset] md:top-3 md:left-12 md:rounded-xl">
-          <Button
-            variant="transparent"
-            onClick={() => setIsFilterOpen(true)}
+          <MapContainer
+            className="h-full z-10"
+            center={[-37.8136, 144.9631]}
+            zoom={13}
+            whenCreated={(mapInstance) => {
+              mapRef.current = mapInstance;
+            }}
           >
-            🔍 Smart Filters
-          </Button>
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution="&copy; OpenStreetMap contributors"
+            />
+            <BoundsWatcher onChange={setBbox} />
+            <ClusterMarkers
+              showCongestion={filters.showCongestion}
+              stations={filteredStations}
+              selectedStation={selectedStation}
+              onSelectStation={(st) => setSelectedStation(st)}
+            />
+            <NearbyPlaceMarkers />
+            <LocateUser />
+          </MapContainer>
+
+          {/* <button
+            className="btn btn-primary btn-dark-mode"
+            aria-label="Toggle dark mode"
+            onClick={() => setIsDark(prev => !prev)}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? '🌙' : '☀️'}
+          </button> */}
+
+          <div className="absolute z-11 left-3 bottom-18 md:bottom-[unset] md:top-3 md:left-12 md:rounded-xl">
+            <Button
+              variant="transparent"
+              onClick={() => setIsFilterOpen(true)}
+            >
+              🔍 Smart Filters
+            </Button>
+          </div>
+          <SmartFilter
+            isOpen={isFilterOpen}
+            onClose={() => setIsFilterOpen(false)}
+            filters={filters}
+            setFilters={setFilters}
+            filteredCount={filteredStations.length}
+            priceMin={priceMin}
+            priceMax={priceMax}
+            connectorTypes={connectorTypes}
+            operatorTypes={operatorTypes}
+          />
+          <ChargerSideBar
+            station={selectedStation}
+            onClose={() => setSelectedStation(null)}
+            favourites={favourites}
+            toggleFavourite={toggleFavourite}
+          />
+
+          <ChargingRecommendations />
+          
+          {/* Voice Assistant floating button - opens popup with VoiceQuery */}
+          <FloatingVoiceAssistant onQueryResult={handleVoiceResult} />
+
+          {/* Existing chat bubble (kept as is) */}
+          {/* <ChatBubble /> */}
         </div>
-        <SmartFilter
-          isOpen={isFilterOpen}
-          onClose={() => setIsFilterOpen(false)}
-          filters={filters}
-          setFilters={setFilters}
-          filteredCount={filteredStations.length}
-          priceMin={priceMin}
-          priceMax={priceMax}
-          connectorTypes={connectorTypes}
-          operatorTypes={operatorTypes}
-        />
-        <ChargerSideBar
-          station={selectedStation}
-          onClose={() => setSelectedStation(null)}
-          favourites={favourites}
-          toggleFavourite={toggleFavourite}
-        />
-
-        <ChargingRecommendations />
-        
-        {/* Voice Assistant floating button - opens popup with VoiceQuery */}
-        <FloatingVoiceAssistant onQueryResult={handleVoiceResult} />
-
-        {/* Existing chat bubble (kept as is) */}
-        {/* <ChatBubble /> */}
-      </div>
+      </NearbyPlacesProvider>
     </>
   );
 }

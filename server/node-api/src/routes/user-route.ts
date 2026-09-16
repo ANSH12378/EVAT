@@ -143,7 +143,7 @@ router.post("/register", (req, res) => userController.register(req, res));
  *                       example: "eyJhbGciOiJIUzI1NiIs..."
  *                     refreshToken:
  *                       type: string
- *                       description: Refresh token, unchanged
+ *                       description: Newly rotated refresh token (if the access token was renewed)
  *                       example: "eyJhbGciOiJIUzI1NiIs..."
  *       401:
  *         description: Missing, invalid, or expired refresh token (login required)
@@ -205,6 +205,9 @@ router.post("/jwt-login", (req, res) => userController.jwtLogin(req, res));
  *                   properties:
  *                     accessToken:
  *                       type: string
+ *                     refreshToken:
+ *                       type: string
+ *                       description: Newly rotated refresh token
  *       401:
  *         description: Invalid credentials
  *         content:

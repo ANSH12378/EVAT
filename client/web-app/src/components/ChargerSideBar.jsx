@@ -464,7 +464,7 @@ export default function ChargerSideBar({ station, onClose }) {
         )}
 
 
-        <NearbyPlaces station={station} />
+        <NearbyPlaces />
 
         {/* Booking Tool */}
         <div className="sidebar-linebreak" />
