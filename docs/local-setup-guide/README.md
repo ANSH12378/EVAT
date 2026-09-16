@@ -160,21 +160,10 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 2. Ensure you have a billing account and it is enabled ([https://console.cloud.google.com/billing/](https://console.cloud.google.com/billing/))
 3. Click the sidebar menu and go to 'API & Services'
 4. Click 'Enable APIs and services'
-5. Search for and enable 'Places API (New)', 'Places API', 'Distance Matrix API', 'Directions API', and 'Elevation API'
+5. Search for and enable 'Maps JavaScript API', 'Geocoding API', 'Places API (New)', 'Places API', 'Distance Matrix API', 'Directions API', and 'Elevation API'
 6. At the top of the page search for 'Credentials' and click on it
 7. Click 'Create Credentials' then 'API key'
 8. Copy the API key into the `.env` file for `GOOGLE_MAPS_API_KEY="Key"`
-
-The frontend needs a second Google Maps API key because browser keys use different security restrictions from backend keys:
-
-1. In the same Google Cloud project, enable the **Maps JavaScript API** and **Geocoding API** if they are not already enabled.
-2. Return to **APIs & Services → Credentials**, select **Create Credentials → API key**, and create a second key.
-3. Edit the new key and set **Application restrictions** to **Websites** (HTTP referrers).
-4. Add the local frontend address `http://localhost:3000/*`. Add the deployed website's URL as another allowed referrer if you will use the key outside local development.
-5. Under **API restrictions**, restrict the key to the **Maps JavaScript API**, **Geocoding API**, and the Places APIs enabled above.
-6. Save the key for `VITE_GOOGLE_MAPS_API_KEY` in the frontend `.env` file described below.
-
-If you're having trouble with this, you *can* use the same API key for frontend and backend in a development environment, but it's good practice to set up a separate one.
 
 ##### GOOGLE_AI_API_KEY
 
@@ -210,18 +199,21 @@ This involves adding a plus sign (‘+’) and any text after your email usernam
 For example, if your email is username@gmail.com, you could have aliases of username+evat_user@gmail.com and username+evat_admin@gmail.com.
 
 All aliased emails will deliver to your main inbox, but will show which ‘+’ address they were delivered to. 
+
 ### Frontend Setup
 
 Thankfully, this one is much simpler 🙂
 
 1. Navigate to the `/client/web-app` subdirectory.
 2. Create a new `.env` file.
-3. Paste the following into it, replacing the placeholder with the browser-restricted Google Maps API key created above:
+3. Paste the following into it, replacing the placeholder with the same Google Maps API key used in the backend `.env` file:
 
 ```env
 VITE_API_URL=http://localhost:8080/api
-VITE_GOOGLE_MAPS_API_KEY=your_browser_restricted_api_key
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 ```
+
+Because this guide is intended for new students, I have a responsibility to tell you that reusing the same API key here is a minor security risk. In practice, if you're only running the application on your local machine for development, the risk is limited. See the section **Security Risks Explained** below for more information.
 
 #### Optional: enabling the EVAT-AI chatbot
 
@@ -233,17 +225,23 @@ VITE_GEMINI_API_KEY=your_google_ai_api_key
 
 This key is optional. If you leave it blank, the rest of the application will continue to work, but the EVAT-AI chatbot will be disabled.
 
-As of 15 September 2026, EVAT calls the Gemini API directly from the frontend. Vite includes variables beginning with `VITE_` in the JavaScript sent to the browser, which means this API key is visible through browser developer tools and can potentially be obtained by a bad actor with access to the web frontend.
+This key also has a **security risk**; see below for details.
 
-For local development, the practical risk is limited because the website is normally accessible only from your own computer. If you enable EVAT-AI:
+#### Security Risks Explained
+
+As a new student, you don't need to understand all the technical details in this section. **The tl;dr is that you should be fine if you _only_ run the app on your local machine, you're on a trusted network, and you trust your browser extensions**. I am including these for completeness and because I feel an obligation, if I'm telling you how to set the application up, to also tell you of the associated security risks.
+
+For the **Google Maps API key**, reusing the backend key in the frontend means that a key with access to backend services is exposed in browser code. A deployed application should use separate keys with restrictions appropriate to their uses. As of 16 September 2026, the way the application is written hinders doing so, because the frontend key is also used (incorrectly) to directly call one of the API's geocoding web-service endpoint. The application would need to be updated to resolve this before being deployed.
+
+For the **Gemini API key**, the application currently (as of 16 September 2026) calls the Gemini API directly from the frontend. As above, this means the API key is visible through browser developer tools and can potentially be obtained by a bad actor with access to the web frontend. Unlike the frontend Maps keys, there is no good reason for this to be exposed: it should remain in the backend - this would need to be resolved before the application can be safely deployed.
+
+Some tips for managing these risks:
 
 - Do not expose the local development server to a public network or internet tunnel.
 - Only use browser extensions that you trust - a malicious extension could potentially scrape this info.
-- Be aware that anyone who can access the running frontend may be able to copy the key and consume its quota or incur charges.
-- Revoke and replace the key if you believe it has been exposed.
-- Obviously, do not deploy to production with this key populated.
-
-The application should be updated to send Gemini requests through the backend before it is deployed, ensuring that the API key remains server-side.
+- Be aware that anyone who can access the running frontend may be able to copy the keys and consume its quota or incur charges.
+- Revoke and replace keys if you believe they have been exposed.
+- Do not deploy the application with the current key configuration. A deployed version should use separate, appropriately restricted Maps keys and move Gemini requests to the backend.
 
 #### Root folder setup
 There is *one* more `.env` file to set up, to be placed in the root directory of the repository. This one is also very simple.
@@ -274,7 +272,7 @@ winget install --id=astral-sh.uv -e
 ```
 
 Verify that it is available with `uv --version`.
-
+---
 ## Running the app
 
 We're finally ready! From the root directory of the repository, run:
