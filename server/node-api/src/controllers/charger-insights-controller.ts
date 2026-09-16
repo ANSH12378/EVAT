@@ -9,6 +9,15 @@ import ChargingInsightsService from '../services/charger-insights-service';
 export default class ChargerInsightsController {
   constructor(private readonly insightsService: ChargingInsightsService) {}
 
+  private parseDaysBack(value: unknown): number | null {
+    if (value === undefined) return 30;
+
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed >= 1 && parsed <= 365
+      ? parsed
+      : null;
+  }
+
   /**
    * Get charging insights for a single station
    * GET /api/v1/insights/station/:stationId
@@ -19,7 +28,7 @@ export default class ChargerInsightsController {
   async getStationInsights(req: Request, res: Response): Promise<Response> {
     try {
       const { stationId } = req.params;
-      const daysBack = parseInt(req.query.daysBack as string) || 30;
+      const daysBack = this.parseDaysBack(req.query.daysBack);
 
       if (!stationId) {
         return res.status(400).json({
@@ -28,7 +37,7 @@ export default class ChargerInsightsController {
         });
       }
 
-      if (daysBack < 1 || daysBack > 365) {
+      if (daysBack === null) {
         return res.status(400).json({
           message: 'daysBack must be between 1 and 365',
           error: 'Bad Request',
@@ -66,6 +75,7 @@ export default class ChargerInsightsController {
   async getBulkInsights(req: Request, res: Response): Promise<Response> {
     try {
       const { stationIds, daysBack = 30 } = req.body;
+      const parsedDaysBack = this.parseDaysBack(daysBack);
 
       if (!stationIds || !Array.isArray(stationIds) || stationIds.length === 0) {
         return res.status(400).json({
@@ -81,7 +91,7 @@ export default class ChargerInsightsController {
         });
       }
 
-      if (daysBack < 1 || daysBack > 365) {
+      if (parsedDaysBack === null) {
         return res.status(400).json({
           message: 'daysBack must be between 1 and 365',
           error: 'Bad Request',
@@ -90,7 +100,7 @@ export default class ChargerInsightsController {
 
       const insights = await this.insightsService.getBulkInsights(
         stationIds,
-        daysBack
+        parsedDaysBack
       );
 
       return res.status(200).json({

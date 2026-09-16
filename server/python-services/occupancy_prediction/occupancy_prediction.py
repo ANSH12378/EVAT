@@ -50,20 +50,34 @@ def predict(request_data: Dict) -> Dict:
             "confidence": 0.0,
         }
 
-    values = list(historical.values())
+    observed_hours = [value for value in historical.values() if value > 0]
+    if not observed_hours:
+        return {
+            "status": "success",
+            "station_id": request_data.get("station_id", ""),
+            "predicted_occupancy": 0.0,
+            "busy_hours": [],
+            "off_peak_hours": [],
+            "recommendation": "Insufficient historical data to predict occupancy.",
+            "confidence": 0.0,
+        }
+
+    # Zero-filled hours from the repo = no sessions and should not be used to label an "unobserved" period as off-peak
+    observed = {hour: value for hour, value in historical.items() if value > 0}
+    values = list(observed.values())
     average = sum(values) / len(values)
     maximum = max(values)
     busy_hours = sorted(
-        hour for hour, value in historical.items() if value > average * 1.5
+        hour for hour, value in observed.items() if value > average * 1.5
     )
     off_peak_hours = sorted(
-        hour for hour, value in historical.items() if value < average * 0.75
+        hour for hour, value in observed.items() if value < average * 0.75
     )
 
     current_hour = _parse_hour(request_data.get("time"))
     current_value = historical.get(current_hour, average)
     predicted_occupancy = round((current_value / maximum) * 100, 2) if maximum else 0.0
-    confidence = round(min(len(historical) / 24, 1.0), 2)
+    confidence = round(min(len(observed_hours) / 24, 1.0), 2)
 
     # Conditional recommendation based on busy and off-peak hours
     if busy_hours:

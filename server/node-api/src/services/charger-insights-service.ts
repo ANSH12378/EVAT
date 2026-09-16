@@ -122,7 +122,7 @@ export default class ChargingInsightsService {
         return {
           predictedOccupancy: data.predicted_occupancy,
           busyHours: data.busy_hours || [],
-          confidence: data.confidence || 0.7,
+          confidence: data.confidence ?? 0.7,
         };
       }
 

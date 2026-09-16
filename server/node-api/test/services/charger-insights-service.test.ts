@@ -28,6 +28,7 @@ describe('ChargingInsightsService', () => {
 	});
 
 	test('returns occupancy insights with Python predictions', async () => {
+		// Arrange
 		repository.getStationOccupancyByHour.mockResolvedValue(occupancyData);
 		mockedAxios.post.mockResolvedValue({
 			data: {
@@ -38,8 +39,10 @@ describe('ChargingInsightsService', () => {
 			},
 		} as any);
 
+		// Act
 		const result = await service.getStationInsights('station-1', 30);
 
+		// Assert
 		expect(repository.getStationOccupancyByHour).toHaveBeenCalledWith('station-1', 30);
 		expect(mockedAxios.post).toHaveBeenCalledWith(
 			expect.stringContaining('/occupancyPrediction/predict'),
@@ -58,17 +61,21 @@ describe('ChargingInsightsService', () => {
 	});
 
 	test('falls back to database insights when Python prediction fails', async () => {
+		// Arrange
 		repository.getStationOccupancyByHour.mockResolvedValue(occupancyData);
 		mockedAxios.post.mockRejectedValue(new Error('timeout'));
 
+		// Act
 		const result = await service.getStationInsights('station-1');
 
+		// Assert
 		expect(result.predictions).toBeNull();
 		expect(result.totalSessions).toBe(15);
 		expect(result.recommendation).toContain('Station is busy');
 	});
 
 	test('returns successful stations when one bulk station fails', async () => {
+		// Arrange
 		repository.getStationOccupancyByHour
 			.mockResolvedValueOnce(occupancyData)
 			.mockRejectedValueOnce(new Error('station unavailable'));
@@ -81,13 +88,16 @@ describe('ChargingInsightsService', () => {
 			},
 		} as any);
 
+		// Act
 		const result = await service.getBulkInsights(['station-1', 'station-2']);
 
+		// Assert
 		expect(result).toHaveLength(1);
 		expect(result[0].stationId).toBe('station-1');
 	});
 
 	test('returns a low-occupancy recommendation when no peak exists', async () => {
+		// Arrange
 		repository.getStationOccupancyByHour.mockResolvedValue({
 			...occupancyData,
 			occupancyByHour: { 8: 1, 9: 1, 10: 1, 11: 1 },
@@ -101,14 +111,37 @@ describe('ChargingInsightsService', () => {
 			},
 		} as any);
 
+		// Act
 		const result = await service.getStationInsights('station-1');
 
+		// Assert
 		expect(result.recommendation).toContain('Good time to charge anytime');
 	});
 
-	test('formats separated hours as separate ranges', () => {
+	test('preserves zero confidence from Python predictions', async () => {
+		// Arrange
+		repository.getStationOccupancyByHour.mockResolvedValue(occupancyData);
+		mockedAxios.post.mockResolvedValue({
+			data: {
+				status: 'success',
+				predicted_occupancy: 0,
+				busy_hours: [],
+				confidence: 0,
+			},
+		} as any);
+
+		// Act
+		const result = await service.getStationInsights('station-1');
+
+		// Assert
+		expect(result.predictions?.confidence).toBe(0);
+	});
+
+	test('formats separated hours as separate ranges', async () => {
+		// Arrange & Act
 		const formatHours = (service as any).formatHours.bind(service);
 
+		// Assert
 		expect(formatHours([8, 9, 14, 16])).toBe(
 			'8:00-10:00, 14:00-15:00, 16:00-17:00',
 		);

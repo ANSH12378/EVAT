@@ -79,7 +79,7 @@ export default class ChargerSessionRepository {
         startTime: { $gte: startDate, $lte: endDate },
         status: { $in: ['completed', 'in_progress'] },
       })
-        .select('startTime')
+        .select('startTime endTime')
         .lean();
 
       // Group sessions by hour-of-day and count
@@ -89,11 +89,16 @@ export default class ChargerSessionRepository {
       }
 
       sessions.forEach((session) => {
-        const hour = new Date(session.startTime).getHours();
-        if (!occupancyByHour[hour]) {
-          occupancyByHour[hour] = [];
+        const sessionStart = new Date(Math.max(new Date(session.startTime).getTime(), startDate.getTime()));
+        const sessionEnd = new Date(Math.min(new Date(session.endTime ?? endDate).getTime(), endDate.getTime()));
+
+        for (
+          const occupiedHour = new Date(sessionStart);
+          occupiedHour < sessionEnd;
+          occupiedHour.setHours(occupiedHour.getHours() + 1, 0, 0, 0)
+        ) {
+          occupancyByHour[occupiedHour.getHours()].push(1);
         }
-        occupancyByHour[hour].push(1);
       });
 
       // Calculate average sessions per hour

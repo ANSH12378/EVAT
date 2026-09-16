@@ -7,6 +7,7 @@ import express from 'express';
 import ChargerInsightsController from '../controllers/charger-insights-controller';
 import ChargingInsightsService from '../services/charger-insights-service';
 import ChargerSessionRepository from '../repositories/charger-session-repository';
+import { authGuard } from '../middlewares/auth-middleware';
 
 // Initialize router
 const router = express.Router();
@@ -65,6 +66,7 @@ const chargerInsightsController = new ChargerInsightsController(chargingInsights
  */
 router.get(
   '/station/:stationId',
+  authGuard(['user', 'admin']),
   (req, res) => chargerInsightsController.getStationInsights(req, res)
 );
 
@@ -116,6 +118,7 @@ router.get(
  */
 router.post(
   '/stations',
+  authGuard(['user', 'admin']),
   (req, res) => chargerInsightsController.getBulkInsights(req, res)
 );
 
