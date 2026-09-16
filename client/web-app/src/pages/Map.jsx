@@ -5,22 +5,22 @@ import L from 'leaflet';
 import { UserContext } from '../context/user';
 import { FavouritesContext } from '../context/FavouritesContext';
 import { getChargers, getConnectorTypes, getOperatorTypes } from '../services/chargerService';
+import { Banner } from '../components/Banner';
+import { Button } from '../components/Button';
 import NavBar from '../components/NavBar';
 import LocateUser from '../components/LocateUser';
 import ClusterMarkers from '../components/ClusterMarkers';
 import NearbyPlaceMarkers from '../components/NearbyPlaceMarkers';
 import SmartFilter from '../components/SmartFilter';
-import ChatBubble from "../components/ChatBubble";
 import ChargerSideBar from '../components/ChargerSideBar';
 import FloatingVoiceAssistant from '../components/FloatingVoiceAssistant';
 import ChargingRecommendations from '../components/ChargingRecommendations';
 import { NearbyPlacesProvider } from '../context/NearbyPlacesContext';
 // styles
+import '../styles/Map.css'; // For the nearby places provider style
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import { Banner } from '../components/Banner';
-import { Button } from '../components/Button';
 
 // Configure default Leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;

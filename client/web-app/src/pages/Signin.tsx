@@ -20,7 +20,8 @@ type UserData = {
   [key: string]: unknown;
 };
 type SigninResponseType = {
-  accessToken: string | { accessToken: string };
+  accessToken: string | { accessToken: string; refreshToken: string };
+  refreshToken: string;
   user?: Partial<UserData>;
   [key: string]: unknown;
 };
@@ -51,6 +52,17 @@ function Signin() {
 
     return '';
   };
+  
+  const _extractRefreshToken = (parsed: SigninResponseType): string => {
+    if (typeof parsed.refreshToken === 'string') {
+      return parsed.refreshToken;
+    }
+    if (typeof parsed.refreshToken === 'object' && parsed.accessToken !== null && 'refreshToken' in parsed.accessToken) {
+      return (parsed.accessToken as { refreshToken: string }).refreshToken;
+    }
+
+    return '';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,11 +83,13 @@ function Signin() {
       if (response.ok && data?.data) {
         const parsed: SigninResponseType = {
           accessToken: '',
+          refreshToken: '',
           ...data.data,
         };
 
         // TS-safe way to extract access token from possibly nested structure
         const accessToken = _extractAccessToken(parsed);
+        const refreshToken = _extractRefreshToken(parsed);
 
         if (accessToken.trim() === '') {
           throw new Error('Invalid access token returned from the server!');
@@ -97,6 +111,7 @@ function Signin() {
                     `${data?.data?.user?.firstName || ''} ${data?.data?.user?.lastName || ''}`.trim(),
           mobile: data?.data?.user?.mobile,
           token: accessToken,
+          refreshToken,
           createdAt: data?.data?.user?.createdAt,
           avatarURL: profileData?.data?.avatarURL,
         };
@@ -145,6 +160,7 @@ function Signin() {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
@@ -153,7 +169,10 @@ function Signin() {
         // console.log('JWT login response:', data);
         if (data.data?.accessToken) {
           parsedUser.token = data.data.accessToken;
-          // update accessToken if it had to be updated
+          if (data.data?.refreshToken) {
+              parsedUser.refreshToken = data.data.refreshToken;
+          }
+          // update both tokens if it had to be updated
           localStorage.setItem('currentUser', JSON.stringify(parsedUser));
           // redirect to map
           navigate('/map');
