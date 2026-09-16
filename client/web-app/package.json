@@ -26,6 +26,7 @@
     "@mapbox/polyline": "^1.2.1",
     "axios": "^1.14.0",
     "chart.js": "^4.5.1",
+    "dompurify": "^3.4.15",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
     "lucide-react": "^0.528.0",
