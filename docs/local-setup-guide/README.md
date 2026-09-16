@@ -194,6 +194,8 @@ To set up your Gmail account for Nodemailer:
 
     ![Creating a Google app password](images/google-create-app-password.png)
 
+    Note that you may not see this option if you don't have two-factor authentication on your Google account. Instructions on how to set this up can be found [here](https://support.google.com/accounts/answer/185839).
+
 3. A password will be displayed:
 
     ![Generated Google app password](images/google-generated-app-password.png)
