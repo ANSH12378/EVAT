@@ -164,20 +164,26 @@ export default function NearbyPlaces() {
 
   return (
     <div>
-      <div className="sidebar-linebreak" />
-      <button
-        type="button"
-        className="promo-section-toggle"
-        onClick={() => setExpanded((open) => !open)}
-      >
-        <span className="promo-section-title">
+      <div className="flex justify-between items-center">
+        <h6 class="font-bold flex items-center gap-x-2">
           <Store size={16} />
           Nearby Food & Stores
-        </span>
-        <span className="text-tiny">
-          {expanded ? "Hide" : `${places.length || ""} Show`}
-        </span>
-      </button>
+        </h6>
+        
+        <button
+          className="
+            flex items-center justify-center size-6
+            rounded-md
+            cursor-pointer
+            outline-1 outline-primary/25
+            hover:bg-primary/25
+          "
+          onClick={() => setExpanded(!expanded)}
+          aria-label={open ? "Expand nearby places" : "Minimize nearby places"}
+        >
+          {expanded ? "-" : "+"}
+        </button>
+      </div>
 
       {expanded && (
         <>

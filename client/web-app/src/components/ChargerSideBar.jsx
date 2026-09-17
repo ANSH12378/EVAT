@@ -9,7 +9,11 @@ import {
 } from '../services/chargerReviewService';
 import { toast } from "react-toastify";
 import { getChargerCongestion } from '../services/chargerCongestionService';
+import { Button } from './Button';
+import { Input } from './Input';
+import '../styles/Sidebar.css';
 import NearbyPlaces from './NearbyPlaces';
+import { Banner } from './Banner';
 
 
 export default function ChargerSideBar({ station, onClose }) {
@@ -239,24 +243,45 @@ export default function ChargerSideBar({ station, onClose }) {
   if (!station) return null;
 
   return (
-    <div className="sidebar">
+    <div
+      className="
+        absolute z-15 inset-y-0 left-0
+        bg-background/80 backdrop-blur max-h-[calc(100vh-var(--header-height))]
+      "
+    >
       <div>
-        <button className="btn btn-danger sidebar-btn-close" onClick={onClose}>
+        <Button
+          type="button"
+          variant="transparent"
+          className="
+            absolute -right-6 top-2 translate-x-1/2
+            size-9 bg-background/25 rounded-full border-none p-0!
+          "
+          onClick={onClose}
+          aria-label="Close charger details"
+        >
           <X size={20} />
-        </button>
+        </Button>
       </div>
 
-      <div className="sidebar-content">
+      <div
+        className="
+          max-w-xs p-4 flex flex-col gap-y-6
+          max-h-full
+          md:max-w-sm md:py-4 md:px-6 md:gap-y-6
+        ">
         {/* Station Header */}
         <div>
-          <h4 className='h4 text-center'>{station.operator || 'Charging Station'}</h4>
-          <div className="rating-display">
-            <span>{reviewStats.averageRating.toFixed(1)}</span>
-            <div>
+          <h4 className="font-semibold text-center text-lg md:text-xl">
+            {station.operator || 'Charging Station'}
+          </h4>
+          <div className="grid grid-cols-3 items-center mt-3">
+            <span class="text-xs sm:text-sm">{reviewStats.averageRating.toFixed(1)}</span>
+            <div className="flex justify-center">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
-                  className='middle'
+                  className="middle"
                   size={16}
                   fill={star <= Math.round(reviewStats.averageRating) ? '#fbbf24' : '#d1d5db'}
                   color={star <= Math.round(reviewStats.averageRating) ? '#fbbf24' : '#d1d5db'}
@@ -264,7 +289,7 @@ export default function ChargerSideBar({ station, onClose }) {
               ))}
             </div>
             <span
-              className="clickable-text middle"
+              className="text-right text-xs sm:text-sm"
               onClick={() => setShowReviews(!showReviews)}
             >
               ({reviewStats.totalReviews} reviews)
@@ -273,9 +298,10 @@ export default function ChargerSideBar({ station, onClose }) {
         </div>
 
         {/* save favourite button */}
-        <div className="sidebar-linebreak" />
-        <div className="action-buttons">
-          <button
+        <div className="flex justify-between gap-x-4">
+          <Button
+            type="button"
+            variant="unstyled"
             onClick={async () => {
               if (!user?.token) {
                 alert('Please sign in to save favorites.');
@@ -297,14 +323,20 @@ export default function ChargerSideBar({ station, onClose }) {
                 alert('Failed to save favorite. Please try again.');
               }
             }}
-            className={`btn favourite-btn btn-small ${isFav ? 'saved' : ''}`}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+              isFav
+                ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+            }`}
           >
             <Heart className={`heart-${isFav ? 'full' : 'empty'}`} size={18} />
             <span>{isFav ? 'Saved' : 'Save'}</span>
-          </button>
+          </Button>
 
           {/* review button */}
-          <button
+          <Button
+            type="button"
+            variant="unstyled"
             onClick={() => {
               if (!user?.token) {
                 alert('Please sign in to review this charger.');
@@ -322,186 +354,196 @@ export default function ChargerSideBar({ station, onClose }) {
               }
               setShowReviewForm(!showReviewForm);
             }}
-            className={`btn review-btn btn-small ${userHasReviewed ? 'reviewed' : ''}`}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+              userHasReviewed
+                ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+            }`}
           >
             <Star className={`star-${userHasReviewed ? 'full' : 'empty'}`} size={18} />
             <span>{userHasReviewed ? 'Edit Review' : 'Review'}</span>
-          </button>
+          </Button>
           {/* </div> */}
         </div>
 
         {/* Station Details */}
-        <div className="sidebar-linebreak" />
-        <div className="sidebar-detail-row">
-          <span className="sidebar-detail-label">Congestion:</span>
-          <span className="sidebar-detail-value">{congestionLevel || 'Unknown'}</span>
-        </div>
-        <div className="sidebar-detail-row">
-          <span className="sidebar-detail-label">Type:</span>
-          <span className="sidebar-detail-value">{station.connection_type || 'N/A'}</span>
-        </div>
-        <div className="sidebar-detail-row">
-          <span className="sidebar-detail-label">Power:</span>
-          <span className="sidebar-detail-value">{station.power_output || 'N/A'} kW</span>
-        </div>
-        <div className="sidebar-detail-row">
-          <span className="sidebar-detail-label">Cost:</span>
-          <span className="sidebar-detail-value">{station.cost || 'N/A'}</span>
-        </div>
-        <div className="sidebar-detail-row">
-          <span className="sidebar-detail-label">Access:</span>
-          <span className="sidebar-detail-value">{station.access_key_required === 'true' ? 'Restricted' : 'Open'}</span>
-        </div>
-
-        {/* Review Form */}
-        {showReviewForm && (
-          <div>
-            <div className="sidebar-linebreak" />
-            <h6>{userHasReviewed ? 'Update your review' : 'Rate this charger'}</h6>
-            <div className="rating-input">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  size={24}
-                  className="rating-star"
-                  fill={star <= userReview.rating ? '#fbbf24' : '#d1d5db'}
-                  color={star <= userReview.rating ? '#fbbf24' : '#d1d5db'}
-                  onClick={() => setUserReview(prev => ({ ...prev, rating: star }))}
-                />
-              ))}
+        <div className="h-px border-t border-surface-700/75" />
+        <div className="flex flex-col gap-y-2">
+          {[
+            ['Congestion:', congestionLevel || 'Unknown'],
+            ['Type:', station.connection_type || 'N/A'],
+            ['Power:', `${station.power_output || 'N/A'} kW`],
+            ['Cost:', station.cost || 'N/A'],
+            ['Access:', station.access_key_required === 'true' ? 'Restricted' : 'Open'],
+          ].map(([label, value]) => (
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-primary">{label}</span>
+              <span className="text-sm text-surface-800">{value}</span>
             </div>
-            <label className='form-label required'>Your Review:</label>
-            <textarea
-              className="full-width"
-              placeholder={userHasReviewed ? "Update your review..." : "Write your review..."}
-              value={userReview.comment}
-              onChange={(e) => setUserReview(prev => ({ ...prev, comment: e.target.value }))}
-              required minLength="5" maxLength="255"
-            />
-            {/* Min/Max character information*/}
-            <p className={(userReview.comment.length <= 4) ? "review-charCount-invalid" : "review-charCount-valid"}>
-              {userReview.comment.length}/255
-            </p>
-            <button
-              className="btn btn-primary btn-small full-width uppercase"
-              onClick={handleSubmitReview}
-              disabled={isSubmittingReview || !userReview.rating || userReview.comment.length <= 4 || userReview.comment.length >= 255}
-            >
-              {isSubmittingReview
-                ? (userHasReviewed ? 'Updating...' : 'Submitting...')
-                : (userHasReviewed ? 'Update Review' : 'Submit Review')
-              }
-            </button>
-          </div>
-        )}
+          ))}
+        </div>
+        <div className="h-px border-t border-surface-700/75" />
 
-        {/* Reviews Section */}
-        {showReviews && (
-          <div>
-            <div className="sidebar-linebreak" />
-            <h6>Reviews</h6>
+        <div class="grow flex flex-col overflow-y-auto gap-y-3 -m-2 p-2 md:-mx-6 md:px-6">
+
+          {/* Review Form */}
+          {showReviewForm && (
             <div>
-              {isLoading ? (
-                // loading reviews
-                <div className="font-italic text-small">Loading reviews...</div>
-              ) : reviews.length === 0 ? (
-                // no reviews
-                <div className="font-italic text-small">No reviews yet. Be the first to review this charger!</div>
-              ) : (
-                // show reviews
-                reviews.map((review) => (
-                  <div key={review.id} className="review-item">
-                    <div className="reviewer">
-                      <div className="reviewer-avatar uppercase">
-                        {review.userAvatar || review.userName?.charAt(0) || 'U'}
-                      </div>
-                      <div className="reviewer-details">
-                        <div className='reviewer-name'>
-                          <span className="text-small">{review.userName || 'Anonymous'}</span>
-                          {/* Usernames are hardcoded when a review is made making it a bad idea to use it from the charger_reviews
-                          as a user can update their username and it not be updated elsewhere. The best practice would be to lookup
-                          user id and use the firstName parameter, this doesnt exist on some old accounts at the moment */}
-                          <div className="review-rating">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                size={12}
-                                fill={star <= review.rating ? '#fbbf24' : '#d1d5db'}
-                                color={star <= review.rating ? '#fbbf24' : '#d1d5db'}
-                              />
-                            ))}
-                          </div>
+              <div className="h-px border-t border-surface-700/75" />
+              <h6>{userHasReviewed ? 'Update your review' : 'Rate this charger'}</h6>
+              <div className="rating-input">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={24}
+                    className="rating-star"
+                    fill={star <= userReview.rating ? '#fbbf24' : '#d1d5db'}
+                    color={star <= userReview.rating ? '#fbbf24' : '#d1d5db'}
+                    onClick={() => setUserReview(prev => ({ ...prev, rating: star }))}
+                  />
+                ))}
+              </div>
+              <label className="form-label required">Your Review:</label>
+              <textarea
+                className="full-width"
+                placeholder={userHasReviewed ? "Update your review..." : "Write your review..."}
+                value={userReview.comment}
+                onChange={(e) => setUserReview(prev => ({ ...prev, comment: e.target.value }))}
+                required minLength="5" maxLength="255"
+              />
+              {/* Min/Max character information*/}
+              <p className={(userReview.comment.length <= 4) ? "review-charCount-invalid" : "review-charCount-valid"}>
+                {userReview.comment.length}/255
+              </p>
+              <Button
+                type="button"
+                size="small"
+                className="w-full uppercase"
+                onClick={handleSubmitReview}
+                disabled={!userReview.rating || userReview.comment.length <= 4 || userReview.comment.length >= 255}
+                loading={isSubmittingReview}
+                loadingLabel={userHasReviewed ? 'Updating...' : 'Submitting...'}
+              >
+                {userHasReviewed ? 'Update Review' : 'Submit Review'}
+              </Button>
+            </div>
+          )}
+
+          {/* Reviews Section */}
+          {showReviews && (
+            <div>
+              <div className="h-px border-t border-surface-700/75" />
+              <h6>Reviews</h6>
+              <div>
+                {isLoading ? (
+                  // loading reviews
+                  <div className="font-italic text-small">Loading reviews...</div>
+                ) : reviews.length === 0 ? (
+                  // no reviews
+                  <div className="font-italic text-small">No reviews yet. Be the first to review this charger!</div>
+                ) : (
+                  // show reviews
+                  reviews.map((review) => (
+                    <div key={review.id} className="review-item">
+                      <div className="reviewer">
+                        <div className="reviewer-avatar uppercase">
+                          {review.userAvatar || review.userName?.charAt(0) || 'U'}
                         </div>
-                        <div className="review-time text-tiny">{formatDate(review.timeAgo || review.createdAt)}</div>
+                        <div className="reviewer-details">
+                          <div className="reviewer-name">
+                            <span className="text-small">{review.userName || 'Anonymous'}</span>
+                            {/* Usernames are hardcoded when a review is made making it a bad idea to use it from the charger_reviews
+                            as a user can update their username and it not be updated elsewhere. The best practice would be to lookup
+                            user id and use the firstName parameter, this doesnt exist on some old accounts at the moment */}
+                            <div className="review-rating">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  size={12}
+                                  fill={star <= review.rating ? '#fbbf24' : '#d1d5db'}
+                                  color={star <= review.rating ? '#fbbf24' : '#d1d5db'}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <div className="review-time text-tiny">{formatDate(review.timeAgo || review.createdAt)}</div>
+                        </div>
                       </div>
+                      <p className="review-comment text-small font-italic">{review.comment}</p>
                     </div>
-                    <p className="review-comment text-small font-italic">{review.comment}</p>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Unless the review feature is enabled... */}
+          {/* <div className="h-px border-t border-surface-700/75" /> */}
+
+          <NearbyPlaces />
+
+          {/* Booking Tool */}
+          <div className="h-px border-t border-surface-700/75" />
+          <SideBarBookingTool stationName={station?.operator || "Unknown"} />
+          
+          {/* EV Cost Estimator */}
+          <div className="h-px border-t border-surface-700/75" />
+          <h6>EV Cost Calculator</h6>
+          <div className="flex flex-col gap-y-1">
+            <div className="flex items-center gap-x-2">
+              <label>Avg.&nbsp;km</label>
+              <Input
+                className="input"
+                type="number"
+                placeholder="km to drive"
+                value={kms}
+                onChange={e => setKms(e.target.value)}
+                min="1"
+              />
+            </div>
+            <div className="flex items-center gap-x-2">
+              <label>Car&nbsp;Efficiency</label>
+              <Input
+                className="input"
+                type="number"
+                placeholder="km/kWh"
+                value={carEfficiency}
+                onChange={e => setCarEfficiency(e.target.value)}
+                min="0.1"
+                step="0.1"
+              />
+            </div>
+            <div className="flex items-center gap-x-2">
+              <label>Electricity&nbsp;Cost</label>
+              <Input
+                className="input"
+                type="number"
+                placeholder="$ per kWh"
+                value={evPricePerKWh}
+                onChange={e => setEvPricePerKWh(e.target.value)}
+                min="0.01"
+                step="0.01"
+              />
             </div>
           </div>
-        )}
-
-
-        <NearbyPlaces />
-
-        {/* Booking Tool */}
-        <div className="sidebar-linebreak" />
-        <h6>Book A Charging Session</h6>
-        <SideBarBookingTool stationName={station?.operator || "Unknown"} />
-        
-        {/* EV Cost Estimator */}
-        <div className="sidebar-linebreak" />
-        <h6>EV Cost Calculator</h6>
-        <div>
-          <div className="input-and-label-same-line">
-            <label>Avg. km</label>
-            <input
-              className="input"
-              type="number"
-              placeholder="km to drive"
-              value={kms}
-              onChange={e => setKms(e.target.value)}
-              min="1"
-            />
-          </div>
-          <div className="input-and-label-same-line">
-            <label>Car Efficiency</label>
-            <input
-              className="input"
-              type="number"
-              placeholder="km/kWh"
-              value={carEfficiency}
-              onChange={e => setCarEfficiency(e.target.value)}
-              min="0.1"
-              step="0.1"
-            />
-          </div>
-          <div className="input-and-label-same-line">
-            <label>Electricity Cost</label>
-            <input
-              className="input"
-              type="number"
-              placeholder="$ per kWh"
-              value={evPricePerKWh}
-              onChange={e => setEvPricePerKWh(e.target.value)}
-              min="0.01"
-              step="0.01"
-            />
-          </div>
+          {/* cost form result */}
+          {kms && carEfficiency && evPricePerKWh ? (
+            <Banner
+              type="info"
+              className="font-bold mt-2"
+            >
+              Estimated Electric Cost for the usage: 
+              ${((parseFloat(kms) / parseFloat(carEfficiency)) * parseFloat(evPricePerKWh)).toFixed(2)}
+            </Banner>
+          ) : (
+            <Banner
+              type="info"
+              className="italic mt-2"
+            >
+              Fill out the form to get a result
+            </Banner>
+          )}
         </div>
-        {/* cost form result */}
-        {kms && carEfficiency && evPricePerKWh ? (
-          <div className="estimated-display font-bold" placeholder='Fill out the form to get a result'>
-            Estimated Electric Cost for the usage: 
-            ${((parseFloat(kms) / parseFloat(carEfficiency)) * parseFloat(evPricePerKWh)).toFixed(2)}
-          </div>
-        ) : (
-          <div className="estimated-display font-italic">
-            Fill out the form to get a result
-          </div>
-        )}
       </div>
     </div>
   );

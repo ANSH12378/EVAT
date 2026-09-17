@@ -5,31 +5,22 @@ import L from 'leaflet';
 import { UserContext } from '../context/user';
 import { FavouritesContext } from '../context/FavouritesContext';
 import { getChargers, getConnectorTypes, getOperatorTypes } from '../services/chargerService';
+import { Banner } from '../components/Banner';
+import { Button } from '../components/Button';
 import NavBar from '../components/NavBar';
 import LocateUser from '../components/LocateUser';
 import ClusterMarkers from '../components/ClusterMarkers';
 import NearbyPlaceMarkers from '../components/NearbyPlaceMarkers';
 import SmartFilter from '../components/SmartFilter';
-import ChatBubble from "../components/ChatBubble";
 import ChargerSideBar from '../components/ChargerSideBar';
 import FloatingVoiceAssistant from '../components/FloatingVoiceAssistant';
 import ChargingRecommendations from '../components/ChargingRecommendations';
 import { NearbyPlacesProvider } from '../context/NearbyPlacesContext';
 // styles
+import '../styles/Map.css'; // For the nearby places provider style
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import '../styles/Root.css';
-import '../styles/SmartFilter.css';
-import '../styles/Map.css';
-import '../styles/Buttons.css';
-import '../styles/Elements.css';
-import '../styles/Fonts.css';
-import '../styles/Forms.css';
-import '../styles/NavBar.css';
-import '../styles/Sidebar.css';
-import '../styles/Tables.css';
-import '../styles/Validation.css';
 
 // Configure default Leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -322,19 +313,19 @@ export default function Map() {
   const [operatorTypes, setOperatorTypes] = useState([]);
 
   // local UI state for the floating dark-mode button icon
-  const [isDark, setIsDark] = useState(false);
+  // const [isDark, setIsDark] = useState(false);
 
   // toggle dark mode only when inside the Map page
-  useEffect(() => {
-    if (isDark) {
-      document.body.classList.add("dark-mode");
-    } else {
-      document.body.classList.remove("dark-mode");
-    }
-    return () => {
-      document.body.classList.remove("dark-mode");
-    };
-  }, [isDark]);
+  // useEffect(() => {
+  //   if (isDark) {
+  //     document.body.classList.add("dark-mode");
+  //   } else {
+  //     document.body.classList.remove("dark-mode");
+  //   }
+  //   return () => {
+  //     document.body.classList.remove("dark-mode");
+  //   };
+  // }, [isDark]);
 
   // Fetch chargers once per login. The API ignores bbox, so refetching on every
   // map pan floods the browser/server and blocks nearby places from loading.
@@ -490,161 +481,115 @@ useEffect(() => {
   }, [stations, filters]);
 
   return (
-    <div className={`map-page ${isDark ? "dark" : ""}`}>
+    <>
       <NavBar />
       <NearbyPlacesProvider station={selectedStation}>
-      <div className='container-map'>
-        <button
-          className="btn btn-primary btn-filter btn-small"
-          onClick={() => setIsFilterOpen(true)}
+        <div
+          className="
+            relative h-(--content-height) overflow-auto
+            [&~#evchatbubble-btn]:[--evchatbubble-button-bottom:--spacing(16)] [&~#evchatbubble-btn]:[--evchatbubble-button-bottom-md:--spacing(4)]
+            dark:[&_.leaflet-tile-pane]:invert-90 dark:[&_.leaflet-tile-pane]:hue-rotate-180
+          "
         >
-          🔍 Smart Filters
-        </button>
+          {loading && bbox && (
+            <Banner type="info" className="absolute z-11 font-medium max-w-80 top-2 right-2 md:top-[unset] md:right-[unset] md:bottom-4 md:left-4">
+              Loading charging stations…
+            </Banner>
+          )}
+          {err && (
+            <Banner type="error" className="absolute z-11 font-medium max-w-80 top-2 right-2 md:top-[unset] md:right-[unset] md:bottom-4 md:left-4">
+              {err}
+            </Banner>
+          )}
+          {!bbox && !loading && user?.token && (
+            <Banner type="info" className="absolute z-11 font-medium max-w-80 top-2 right-2 md:top-[unset] md:right-[unset] md:bottom-4 md:left-4">
+              <div className="mb-1 font-semibold">
+                📍 Map Loading
+              </div>
+              <div className="text-sm">
+                Wait for map to load or move/zoom to search for chargers
+              </div>
+            </Banner>
+          )}
+          {!user?.token && (
+            <Banner type="warning" className="absolute z-11 font-medium max-w-80 top-2 right-2 md:top-[unset] md:right-[unset] md:bottom-4 md:left-4">
+              <div className="mb-1 font-semibold">
+                ⚠️ Login Required
+              </div>
+              <div className="text-sm">
+                Please log in to search for charging stations
+                Wait for map to load or move/zoom to search for chargers
+              </div>
+            </Banner>
+          )}
 
-        {loading && bbox && (
-          <div className="map-status-message map-loading" style={{
-            position: 'absolute',
-            top: 12,
-            left: 12,
-            zIndex: 1000,
-            background: '#fff',
-            padding: '8px 12px',
-            borderRadius: 6,
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            fontSize: '14px',
-            fontWeight: 500
-          }}>
-            Loading charging stations…
-          </div>
-        )}
-        {err && (
-          <div className="map-status-message map-error" style={{
-            position: 'absolute',
-            top: 12,
-            left: 12,
-            zIndex: 1000,
-            background: '#ffebee',
-            color: '#c62828',
-            padding: '8px 12px',
-            borderRadius: 6,
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            fontSize: '14px',
-            fontWeight: 500,
-            borderLeft: '4px solid #f44336',
-            maxWidth: '300px'
-          }}>
-            {err}
-          </div>
-        )}
-        {!bbox && !loading && user?.token && (
-          <div className="map-status-message map-info" style={{
-            position: 'absolute',
-            top: 12,
-            left: 12,
-            zIndex: 1000,
-            background: '#e3f2fd',
-            color: '#1565c0',
-            padding: '12px 16px',
-            borderRadius: 8,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            fontSize: '14px',
-            fontWeight: 500,
-            borderLeft: '4px solid #2196f3',
-            maxWidth: '320px',
-            lineHeight: '1.5'
-          }}>
-            <div style={{ fontWeight: 600, marginBottom: '4px' }}>
-              📍 Map Loading
-            </div>
-            <div style={{ fontSize: '13px', opacity: 0.9 }}>
-              Wait for map to load or move/zoom to search for chargers
-            </div>
-          </div>
-        )}
-        {!user?.token && (
-          <div className="map-status-message map-warning" style={{
-            position: 'absolute',
-            top: 12,
-            left: 12,
-            zIndex: 1000,
-            background: '#fff3cd',
-            color: '#856404',
-            padding: '12px 16px',
-            borderRadius: 8,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            fontSize: '14px',
-            fontWeight: 500,
-            borderLeft: '4px solid #ffc107',
-            maxWidth: '300px'
-          }}>
-            <div style={{ fontWeight: 600, marginBottom: '4px' }}>
-              ⚠️ Login Required
-            </div>
-            <div style={{ fontSize: '13px', opacity: 0.9 }}>
-              Please log in to search for charging stations
-            </div>
-          </div>
-        )}
+          <MapContainer
+            className="h-full z-10"
+            center={[-37.8136, 144.9631]}
+            zoom={13}
+            whenCreated={(mapInstance) => {
+              mapRef.current = mapInstance;
+            }}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution="&copy; OpenStreetMap contributors"
+            />
+            <BoundsWatcher onChange={setBbox} />
+            <ClusterMarkers
+              showCongestion={filters.showCongestion}
+              stations={filteredStations}
+              selectedStation={selectedStation}
+              onSelectStation={(st) => setSelectedStation(st)}
+            />
+            <NearbyPlaceMarkers />
+            <LocateUser />
+          </MapContainer>
 
-        <MapContainer
-          className="map-visible-area hide-scrollbar "
-          center={[-37.8136, 144.9631]}
-          zoom={13}
-          whenCreated={(mapInstance) => {
-            mapRef.current = mapInstance;
-          }}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="&copy; OpenStreetMap contributors"
+          {/* <button
+            className="btn btn-primary btn-dark-mode"
+            aria-label="Toggle dark mode"
+            onClick={() => setIsDark(prev => !prev)}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? '🌙' : '☀️'}
+          </button> */}
+
+          <div className="absolute z-11 left-3 bottom-18 md:bottom-[unset] md:top-3 md:left-12 md:rounded-xl">
+            <Button
+              variant="transparent"
+              onClick={() => setIsFilterOpen(true)}
+            >
+              🔍 Smart Filters
+            </Button>
+          </div>
+          <SmartFilter
+            isOpen={isFilterOpen}
+            onClose={() => setIsFilterOpen(false)}
+            filters={filters}
+            setFilters={setFilters}
+            filteredCount={filteredStations.length}
+            priceMin={priceMin}
+            priceMax={priceMax}
+            connectorTypes={connectorTypes}
+            operatorTypes={operatorTypes}
           />
-          <BoundsWatcher onChange={setBbox} />
-          <ClusterMarkers
-            showCongestion={filters.showCongestion}
-            stations={filteredStations}
-            selectedStation={selectedStation}
-            onSelectStation={(st) => setSelectedStation(st)}
+          <ChargerSideBar
+            station={selectedStation}
+            onClose={() => setSelectedStation(null)}
+            favourites={favourites}
+            toggleFavourite={toggleFavourite}
           />
-          <NearbyPlaceMarkers />
-          <LocateUser />
-        </MapContainer>
 
-        <button
-          className="btn btn-primary btn-dark-mode"
-          aria-label="Toggle dark mode"
-          onClick={() => setIsDark(prev => !prev)}
-          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-        >
-          {isDark ? '🌙' : '☀️'}
-        </button>
+          <ChargingRecommendations className={selectedStation ? "hidden md:block" : ""} />
+          
+          {/* Voice Assistant floating button - opens popup with VoiceQuery */}
+          <FloatingVoiceAssistant onQueryResult={handleVoiceResult} />
 
-        <SmartFilter
-          isOpen={isFilterOpen}
-          onClose={() => setIsFilterOpen(false)}
-          filters={filters}
-          setFilters={setFilters}
-          filteredCount={filteredStations.length}
-          priceMin={priceMin}
-          priceMax={priceMax}
-          connectorTypes={connectorTypes}
-          operatorTypes={operatorTypes}
-        />
-        <ChargerSideBar
-          station={selectedStation}
-          onClose={() => setSelectedStation(null)}
-          favourites={favourites}
-          toggleFavourite={toggleFavourite}
-        />
-
-        <ChargingRecommendations />
-        
-        {/* Voice Assistant floating button - opens popup with VoiceQuery */}
-        <FloatingVoiceAssistant onQueryResult={handleVoiceResult} />
-
-        {/* Existing chat bubble (kept as is) */}
-        <ChatBubble />
-      </div>
+          {/* Existing chat bubble (kept as is) */}
+          {/* <ChatBubble /> */}
+        </div>
       </NearbyPlacesProvider>
-    </div>
+    </>
   );
 }
