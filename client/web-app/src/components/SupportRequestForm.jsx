@@ -6,10 +6,6 @@ import ErrorMessage from '../components/ErrorMessage'
 import SuccessMessage from '../components/SuccessMessage'
 import { submitSupportRequest } from "../services/supportRequestService";
 
-import { Mail, User } from "lucide-react";
-import ErrorMessage from "../components/ErrorMessage";
-import SuccessMessage from "../components/SuccessMessage";
-
 const API_URL = import.meta.env.VITE_API_URL;
 const SUPPORT_ENDPOINT = `${API_URL}/support-requests`;
 const RECENT_SUCCESS_MESSAGE_LINGER = 5000;
