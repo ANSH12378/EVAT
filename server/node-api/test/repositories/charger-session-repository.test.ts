@@ -5,6 +5,8 @@ import User from '../../src/models/user-model';  // Import User model
 import Station from '../../src/models/station-model'; // Import Station model
 import ChargerSession from '../../src/models/charger-session-model';  // Import ChargerSession model
 
+jest.setTimeout(60000);
+
 // Mock charger-session-repository
 describe('ChargerSessionRepository', () => {
   let mongoServer: MongoMemoryServer;
@@ -26,7 +28,9 @@ describe('ChargerSessionRepository', () => {
   // Clean up after run
   afterAll(async () => {
     await mongoose.disconnect();
-    await mongoServer.stop();
+    if (mongoServer) {
+      await mongoServer.stop();
+    }
   });
 
   // Delete test case in case of interference
@@ -117,6 +121,35 @@ describe('ChargerSessionRepository', () => {
 
       // Assert
       expect(sessions.length).toBe(2);
+    });
+  });
+
+  describe('getStationOccupancyByHour', () => {
+    test('counts every hour occupied by a multi-hour session', async () => {
+      // Arrange
+      const stationId = new mongoose.Types.ObjectId();
+      const endTime = new Date();
+      endTime.setMinutes(0, 0, 0);
+      endTime.setHours(endTime.getHours() - 1);
+      const startTime = new Date(endTime);
+      startTime.setHours(startTime.getHours() - 2);
+      startTime.setMinutes(30, 0, 0);
+
+      // Act
+      await repository.create({
+        userId: new mongoose.Types.ObjectId(),
+        stationId,
+        startTime,
+        endTime,
+        status: 'completed',
+      });
+
+      const result = await repository.getStationOccupancyByHour(stationId.toString());
+
+      // Assert
+      expect(result.occupancyByHour[startTime.getHours()]).toBe(0.03);
+      expect(result.occupancyByHour[(startTime.getHours() + 1) % 24]).toBe(0.03);
+      expect(result.totalSessions).toBe(1);
     });
   });
 });

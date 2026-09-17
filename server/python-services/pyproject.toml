@@ -14,7 +14,6 @@ dependencies = [
     "pandas>=2.2,<4",
     "pymongo>=4.6,<5",
     "pydantic>=2.9,<3",
-    "pymongo>=4.9,<5",
     "python-dotenv>=1,<2",
     "requests>=2.32,<3",
     "scikit-learn>=1.8,<1.9",
@@ -30,7 +29,17 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["charging_station_recommendation_api/tests", "tests"]
+testpaths = [
+    "charging_station_recommendation_api/tests",
+    "personalisedEVInsights/tests",
+    "environmental_impact_analysis/tests",
+    "pricePrediction/tests",
+    "costComparison/tests",
+    "demandForecasting/tests",
+    "reliability_scoring_api/tests",
+    "weatherAwareRouting/tests",
+    "tests",
+]
 
 [tool.uv]
 package = false

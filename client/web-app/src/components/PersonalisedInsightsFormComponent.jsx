@@ -68,23 +68,22 @@ export default function PersonalisedInsightsFormComponent() {
     if (inputs.charging_convenience) {priorities.push("Charging convenience")}
     if (inputs.tech_features) {priorities.push("Tech features")}
     if (inputs.brand_design) {priorities.push("Brand/ design")}
-    formData.priorities = priorities.join(", ")
-    console.log(formData.priorities);
+    const selectedPriorities = priorities.join(", ");
 
     const payload = {
-      weekly_km: formData.weekly_km,
+      weekly_km: Number(formData.weekly_km),
       trip_length: formData.trip_length,
       driving_frequency: formData.driving_frequency,
       driving_type: formData.driving_type,
       road_trips: formData.road_trips,
       car_ownership: formData.car_ownership,
-      fuel_efficiency: formData.fuel_efficiency,
-      monthly_fuel_spend: formData.monthly_fuel_spend,
+      fuel_efficiency: Number(formData.fuel_efficiency),
+      monthly_fuel_spend: Number(formData.monthly_fuel_spend),
       home_charging: formData.home_charging,
       solar_panels: formData.solar_panels,
       charging_preference: formData.charging_preference,
       budget: formData.budget,
-      priorities: formData.priorities,
+      priorities: selectedPriorities,
       postcode: formData.postcode,
     }
 
@@ -92,9 +91,7 @@ export default function PersonalisedInsightsFormComponent() {
       setLoading(true);
       setMessage("");
 
-      const response = await submitInsights(payload, token);
-      console.log(response);
-
+      await submitInsights(payload, token);
       setMessage("Form submitted successfully.");
 
       setFormData({
@@ -112,6 +109,14 @@ export default function PersonalisedInsightsFormComponent() {
         budget: "",
         priorities: "",
         postcode: ""
+      });
+      setInputs({
+        affordability: false,
+        driving_range: false,
+        environmental_impact: false,
+        charging_convenience: false,
+        tech_features: false,
+        brand_design: false,
       });
       setSubmitted(true);
     } catch (error) {
@@ -137,18 +142,18 @@ export default function PersonalisedInsightsFormComponent() {
           <section className="min-w-0 space-y-4" aria-label="Driving Details">
             <h2 className="mb-5 flex items-center gap-3 text-xl font-bold text-slate-900 dark:text-white"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400"><Car className="h-5 w-5" aria-hidden="true" /></span>Driving Details</h2>
 
-            <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
-              <label htmlFor="insights-weekly_km" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Weekly KM <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>
-              <input
-                type="number"
-                id="insights-weekly_km"
-                className="w-full min-w-0 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-950 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 transition-colors hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-white dark:hover:bg-gray-900 focus:border-emerald-500 dark:focus:border-emerald-700 focus:bg-white dark:focus:bg-gray-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
-                name="weekly_km"
-                placeholder="e.g. 250"
-                value={formData.weekly_km}
-                onChange={handleChange}
-              />
-            </div>
+              <div className="form-section">
+                <label className="form-label required">Weekly KM</label>
+                <input
+                  type="number"
+                  name="weekly_km"
+                  placeholder="e.g. 250"
+                  value={formData.weekly_km}
+                  onChange={handleChange}
+                  min="0"
+                  required
+                />
+              </div>
 
             <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
               <label htmlFor="insights-trip_length" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Typical Trip Length <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>
@@ -237,31 +242,33 @@ export default function PersonalisedInsightsFormComponent() {
           <section className="min-w-0 space-y-4 border-t border-slate-200 dark:border-gray-800 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0" aria-label="Fuel and Charging">
             <h2 className="mb-5 flex items-center gap-3 text-xl font-bold text-slate-900 dark:text-white"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400"><Fuel className="h-5 w-5" aria-hidden="true" /></span>Fuel and Charging</h2>
 
-            <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
-              <label htmlFor="insights-fuel_efficiency" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Fuel Efficiency (L/100km) <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>
-              <input
-                type="number"
-                id="insights-fuel_efficiency"
-                className="w-full min-w-0 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-950 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 transition-colors hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-white dark:hover:bg-gray-900 focus:border-emerald-500 dark:focus:border-emerald-700 focus:bg-white dark:focus:bg-gray-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
-                name="fuel_efficiency"
-                placeholder="e.g. 7.5"
-                value={formData.fuel_efficiency}
-                onChange={handleChange}
-              />
-            </div>
+              <div className="form-section">
+                <label className="form-label required">Fuel Efficiency (L/100km)</label>
+                <input
+                  type="number"
+                  name="fuel_efficiency"
+                  placeholder="e.g. 7.5"
+                  value={formData.fuel_efficiency}
+                  onChange={handleChange}
+                  min="0"
+                  step="0.1"
+                  required
+                />
+              </div>
 
-            <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
-              <label htmlFor="insights-monthly_fuel_spend" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Monthly Fuel Spend ($) <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>
-              <input
-                type="number"
-                id="insights-monthly_fuel_spend"
-                className="w-full min-w-0 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-950 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 transition-colors hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-white dark:hover:bg-gray-900 focus:border-emerald-500 dark:focus:border-emerald-700 focus:bg-white dark:focus:bg-gray-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
-                name="monthly_fuel_spend"
-                placeholder="e.g. 300"
-                value={formData.monthly_fuel_spend}
-                onChange={handleChange}
-              />
-            </div>
+              <div className="form-section">
+                <label className="form-label required">Monthly Fuel Spend ($)</label>
+                <input
+                  type="number"
+                  name="monthly_fuel_spend"
+                  placeholder="e.g. 300"
+                  value={formData.monthly_fuel_spend}
+                  onChange={handleChange}
+                  min="0"
+                  step="0.01"
+                  required
+                />
+              </div>
 
             <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
               <label htmlFor="insights-home_charging" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Is Home Charging Accessible <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>

@@ -6,7 +6,7 @@ import { Button } from './Button';
 import { UserRound, ChartNoAxesColumn, TrendingUp } from 'lucide-react';
 
 
-function Savings({estimatedSave}) {
+function Savings({estimatedSave, savingsMessage}) {
     if (estimatedSave != 0) {
         return (
             <div>
@@ -21,11 +21,47 @@ function Savings({estimatedSave}) {
         return (
             <div>
                 <p className="mb-4 text-xl font-bold text-slate-900 dark:text-white">Your potential EV savings</p>
-                <p className="text-sm leading-6 text-slate-500 dark:text-gray-400">Based on your responses, you already own an EV</p>
-                <p className="text-sm leading-6 text-slate-500 dark:text-gray-400">savings do not apply.</p>
+                <p className="text-sm leading-6 text-slate-500 dark:text-gray-400">
+                    { savingsMessage || 'Based on your responses, you already own an EV. Savings do not apply.' }
+                </p>
             </div>
         )
     }
+}
+
+function SuitabilitySummary({ data }) {
+    if (!Number.isFinite(data.evReadinessScore)) return null;
+
+    return (
+        <section className="suitability-summary" aria-labelledby="suitability-heading">
+            <div className="suitability-score" aria-label={`EV readiness score ${data.evReadinessScore} out of 100`}>
+                <strong>{data.evReadinessScore}</strong>
+                <span>/100</span>
+            </div>
+            <div className="suitability-copy">
+                <p className="suitability-kicker">EV readiness recommendation</p>
+                <h2 id="suitability-heading">{data.recommendationCategory}</h2>
+                <p>{data.personalisedPredictionInsight}</p>
+            </div>
+            <div className="suitability-metrics">
+                <div>
+                    <span>Annual savings</span>
+                    <strong>${Number(data.estimatedAnnualSavings || 0).toLocaleString()}</strong>
+                </div>
+                <div>
+                    <span>Annual EV charging</span>
+                    <strong>${Number(data.estimatedAnnualEvChargingCost || 0).toLocaleString()}</strong>
+                </div>
+                <div>
+                    <span>Annual CO₂ reduction</span>
+                    <strong>{Number(data.estimatedAnnualCo2ReductionKg || 0).toLocaleString()} kg</strong>
+                </div>
+            </div>
+            <p className="suitability-disclaimer">
+                This is a first-stage suitability estimate based on your responses and documented assumptions, not a prediction of real-world EV adoption.
+            </p>
+        </section>
+    );
 }
 
 export default function InsightsDisplay() {
@@ -34,6 +70,8 @@ export default function InsightsDisplay() {
     const token = tokenFull ? JSON.parse(tokenFull).token : null;
 
     const [data, setData] = useState({});
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     // Get the data from the backend
     useEffect(() => {
@@ -41,9 +79,11 @@ export default function InsightsDisplay() {
             try {
                 const response = await getMyInsights(token);
                 setData(response.data);
-                console.log(response.data);
             } catch (error) {
                 console.error('Error insight data:', error);
+                setError(error.message || "Unable to load your EV insights.");
+            } finally {
+                setLoading(false);
             }
         };
         loadInsightData();
@@ -92,8 +132,17 @@ export default function InsightsDisplay() {
         ])
     );
 
+    if (loading) {
+        return <p className="insights-status">Loading your personalised EV recommendation…</p>;
+    }
+
+    if (error) {
+        return <p className="insights-status insights-status-error">{error}</p>;
+    }
+
     return (
         <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+            <SuitabilitySummary data={data} />
             <header className="mb-8 text-center">
                 <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">Compare Your Drive</h1>
                 <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-gray-400 sm:text-base">Similar Drivers &amp; EV Benefits</p>
