@@ -37,14 +37,14 @@ export default function EnvironmentalImpact({
   // Fetch ICE vehicles ONLY when this component mounts
   useEffect(() => {
     const fetchIceVehicles = async () => {
-      if (!user?.token || loadingIce) return;
+      if (!user || loadingIce) return;
 
       setLoadingIce(true);
       setIceError(null);
 
       try {
         const res = await fetch(`${API_URL}/ice-vehicle`, {   // ← adjust endpoint if needed
-          headers: { Authorization: `Bearer ${user.token}` },
+          credentials: "include",
         });
 
         if (!res.ok) throw new Error("Failed to fetch ICE vehicles");
@@ -68,7 +68,7 @@ export default function EnvironmentalImpact({
     };
 
     fetchIceVehicles();
-  }, [user?.token]);
+  }, [user]);
 
   // Filter EV models, variants and years based on selection
   const filteredEvModels = allElectricVehicles
@@ -119,10 +119,8 @@ export default function EnvironmentalImpact({
     `${API_URL}/env-impact-analysis/compare`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${user.token}`,
-      },
+      credentials: "include",
+      headers: { "Content-Type": "application/json", },
       body: JSON.stringify({
         evVehicleId: selectedEv.id,
         iceVehicleId: selectedIce.id,

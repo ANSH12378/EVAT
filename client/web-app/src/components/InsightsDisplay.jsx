@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import BarChart from "./BarChart";
 import { getMyInsights } from "../services/personalisedEvInsightsService";
 import { useNavigate } from 'react-router-dom';
+import { UserContext } from "../context/user";
 
 import "../styles/Root.css";
 import "../styles/Fonts.css";
@@ -34,16 +35,16 @@ function Savings({estimatedSave}) {
 
 export default function InsightsDisplay() {
     const navigate = useNavigate();
-    const tokenFull = localStorage.getItem("currentUser");
-    const token = tokenFull ? JSON.parse(tokenFull).token : null;
 
     const [data, setData] = useState({});
 
     // Get the data from the backend
     useEffect(() => {
+        if (!user) return;
+
         const loadInsightData = async () => {
             try {
-                const response = await getMyInsights(token);
+                const response = await getMyInsights();
                 setData(response.data);
                 console.log(response.data);
             } catch (error) {
@@ -51,7 +52,7 @@ export default function InsightsDisplay() {
             }
         };
         loadInsightData();
-    }, []);
+    }, [user]);
 
     // Set data for graphs
     const createGraphData = (yourValue, similarValue, allValue) => ({

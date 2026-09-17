@@ -196,7 +196,7 @@ const ProfileAvatarTool = ({
 
       const res = await fetch(`${import.meta.env.VITE_API_URL}/profile/avatar/upload`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
         body: formData,
       });
 
@@ -243,10 +243,8 @@ const ProfileAvatarTool = ({
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/profile/avatar`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
+        headers: { "Content-Type": "application/json", },
         body: JSON.stringify({ avatarURL: selectedAvatar }),
       });
 

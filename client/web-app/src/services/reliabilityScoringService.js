@@ -1,10 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
-const authHeaders = (token) => ({
-  "Content-Type": "application/json",
-  Authorization: `Bearer ${token}`,
-});
-
 async function handleResponse(response) {
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
@@ -33,7 +28,7 @@ export const getReliabilityHealth = async () => {
 export const getReliabilitySuburbs = async (token) => {
   const response = await fetch(`${API_URL}/reliability/suburbs`, {
     method: "GET",
-    headers: authHeaders(token),
+    credentials: "include", 
   });
   return handleResponse(response);
 };
@@ -44,7 +39,7 @@ export const getReliabilitySummary = async (token, params = {}) => {
     `${API_URL}/reliability/summary${buildQuery(params)}`,
     {
       method: "GET",
-      headers: authHeaders(token),
+      credentials: "include", 
     }
   );
   return handleResponse(response);
@@ -56,7 +51,7 @@ export const getReliabilityStations = async (token, params = {}) => {
     `${API_URL}/reliability/stations${buildQuery(params)}`,
     {
       method: "GET",
-      headers: authHeaders(token),
+      credentials: "include", 
     }
   );
   return handleResponse(response);
@@ -68,7 +63,7 @@ export const getReliabilityStation = async (token, chargerId) => {
     `${API_URL}/reliability/stations/${encodeURIComponent(chargerId)}`,
     {
       method: "GET",
-      headers: authHeaders(token),
+      credentials: "include", 
     }
   );
   return handleResponse(response);
@@ -80,7 +75,7 @@ export const getReliabilityTop = async (token, params = {}) => {
     `${API_URL}/reliability/top${buildQuery(params)}`,
     {
       method: "GET",
-      headers: authHeaders(token),
+      credentials: "include", 
     }
   );
   return handleResponse(response);
@@ -90,6 +85,8 @@ export const getReliabilityTop = async (token, params = {}) => {
 export const scoreReliabilityStation = async (token, payload) => {
   const response = await fetch(`${API_URL}/reliability/score`, {
     method: "POST",
+    credentials: "include", 
+    headers: { "Content-Type": "application/json" },
     headers: authHeaders(token),
     body: JSON.stringify(payload),
   });
@@ -100,6 +97,8 @@ export const scoreReliabilityStation = async (token, payload) => {
 export const analyzeReliabilitySentiment = async (token, text) => {
   const response = await fetch(`${API_URL}/reliability/sentiment`, {
     method: "POST",
+    credentials: "include", 
+    headers: { "Content-Type": "application/json" },
     headers: authHeaders(token),
     body: JSON.stringify({ text }),
   });

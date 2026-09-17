@@ -27,8 +27,6 @@ import SearchModal from '../components/SearchModal';
 import MapViewDirections from 'react-native-maps-directions';
 import GetLocation from 'react-native-get-location';
 import Geolocation from '@react-native-community/geolocation';
-import { map } from '../../server/data/vehicles';
-import { get, set } from 'mongoose';
 import NavigationInfo from '../components/NavigationInfo';
 
 const config = ConfigData();
@@ -49,14 +47,14 @@ const MapPage = () => {
   const [region, setRegion] = useState<Region | null>(null);
   // const [region, setRegion] = useState<null>(null);
   const [error, setError] = useState<boolean | null>(null);
-  const [chargers, setChargers] = useState<Object | null>(null);
-  const [searchWindow, setSearchWindow] = useState<Boolean | false>(false);
-  const { user, setUser } = useContext(UserContext);
+  const [chargers, setChargers] = useState<any[] | null>(null);
+  const [searchWindow, setSearchWindow] = useState<boolean>(false);
+  const { user, setUser } = useContext<any>(UserContext);
   const [selectedCharger, setSelectedCharger] = useState<{ latitude: number; longitude: number } | null>(null);
   const [travelTime, setTravelTime] = useState<number | null>(null);
   const [travelDistance, setTravelDistance] = useState<number | null>(null);
 
-  const navigation = useNavigation()<any>;
+  const navigation = useNavigation<any>();
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -129,9 +127,11 @@ const MapPage = () => {
         return;
       }
       await getAndSetLocation();
-      mapRef.current.animateToRegion(region, 1000);
+      if (region) {
+        mapRef.current?.animateToRegion(region, 1000);
+      }
       watchId.current = Geolocation.watchPosition(
-        (position) => {
+        (position: any) => {
           // console.log("Location updated, selectedCharger state:", selectedCharger);
           const { latitude, longitude } = position.coords;
           const newRegion = {
@@ -147,7 +147,7 @@ const MapPage = () => {
             mapRef.current.animateToRegion(newRegion, 1000);
           }
         },
-        (err) => {
+        (err: any) => {
           console.log("Location error:", err);
           setError(true);
         },
@@ -162,17 +162,19 @@ const MapPage = () => {
     startLocation();
     return () => {
       console.log("Stopping location watch");
-      Geolocation.clearWatch(watchId);
-      watchId.current = null;
+      if (watchId.current !== null) {
+        Geolocation.clearWatch(watchId.current);
+        watchId.current = null;
+      }
     };
 
-  }, [selectedCharger]);
+  }, []);
 
 
 
 
   //Sends request to backend to get chargers - function to work with the new backend endpoint
-  const searchChargers = async (data) => {
+  const searchChargers = async (data: any) => {
     try {
       setSearchWindow(false);
       //Alternative endpoint for chargers
@@ -188,10 +190,8 @@ const MapPage = () => {
       const urlParams = params.toString();
       const response = await fetch(`${url2}?${urlParams}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token.accessToken}` 
-        }
+        credentials: "include",
+        headers: { 'Content-Type': 'application/json', }
       });
       console.log(`Bearer ${user.token.accessToken}`);
       const result = await response.json();
@@ -200,7 +200,7 @@ const MapPage = () => {
         setChargers(result.data);
         setSearchWindow(false);
 
-        const coords = result.data.map((charger) => ({
+        const coords = result.data.map((charger: any) => ({
           latitude: charger.latitude,
           longitude: charger.longitude,
         }));
@@ -246,7 +246,7 @@ const MapPage = () => {
           <ChargerMarker
             key={`${idx}`}
             charger={charger}
-            goToPressed={(location) => setSelectedCharger(location)}
+            goToPressed={(location: any) => setSelectedCharger(location)}
           />
         ))}
 
@@ -257,12 +257,12 @@ const MapPage = () => {
             apikey={"AIzaSyDCzcXBa_XmfVjGsapneInLFHruLdEit28"}
             strokeWidth={6}
             strokeColor="blue"
-            onReady={result => {
+            onReady={(result: any) => {
               console.log(`Route found. Distance: ${result.distance} km, Duration: ${result.duration} min`);
               setTravelDistance(result.distance.toFixed(1));
               setTravelTime(result.duration.toFixed(1));
             }}
-            onError={errorMessage => {
+            onError={(errorMessage: any) => {
               console.error("Directions error:", errorMessage);
               Alert.alert("Error", "Unable to find directions. Please try again later.");
             }}

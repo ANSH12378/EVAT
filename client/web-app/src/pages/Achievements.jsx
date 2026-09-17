@@ -31,8 +31,6 @@ function Achievements() {
     const [counterValue, setCounterValue] = useState(0);
     const [selectedFlag, setSelectedFlag] = useState("");
 
-    // get token from context if available, otherwise get from local storage
-    const token = contextUser?.token || JSON.parse(localStorage.getItem("currentUser"))?.token;
 
     // Testing Handlers
     const handleAddToCounter = async () => {
@@ -43,7 +41,6 @@ function Achievements() {
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     userId: userStats.userId,
@@ -76,7 +73,6 @@ function Achievements() {
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     userId: userStats.userId,
@@ -105,7 +101,6 @@ function Achievements() {
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     userId: userStats.userId,
@@ -131,7 +126,6 @@ function Achievements() {
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     userId: userStats.userId,
@@ -158,7 +152,6 @@ function Achievements() {
                     credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
                     },
                     body: JSON.stringify({
                         userId: userStats.userId
@@ -182,7 +175,6 @@ function Achievements() {
             // Fetch User Stats
             const statsRes = await fetch(`${API_URL}/user-stats/me`, {
                 credentials: 'include',
-                headers: { Authorization: `Bearer ${token}` },
             });
             if (statsRes.ok) {
                 const statsData = await statsRes.json();
@@ -192,7 +184,6 @@ function Achievements() {
             // Fetch All Achievements with progress
             const achRes = await fetch(`${API_URL}/achievements`, {
                 credentials: 'include',
-                headers: { Authorization: `Bearer ${token}` },
             });
             if (achRes.ok) {
                 const achData = await achRes.json();
@@ -207,12 +198,12 @@ function Achievements() {
 
     // Fetch both user stats and achievements
     useEffect(() => {
-        if (!token) {
+        if (!contextUser) {
             navigate("/signin");
             return;
         }
         fetchData();
-    }, [token, navigate]);
+    }, [contextUser, navigate]);
 
     if (loading) return <div className="loading">Loading achievements...</div>;
 

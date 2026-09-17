@@ -15,13 +15,13 @@ export default function EnvironmentalImpactPage() {
     // Wait for user context to hydrate
     if (user === null) return;
 
-    if (!user?.token) {
+    if (!user) {
       setLoading(false);
       return;
     }
 
     fetch(`${API_URL}/vehicle`, {
-      headers: { Authorization: `Bearer ${user.token}` },
+      credentials: "include",
     })
       .then((res) => res.json())
       .then((data) => {
@@ -54,12 +54,12 @@ export default function EnvironmentalImpactPage() {
         )}
 
         {/* User loaded but no token */}
-        {user !== null && !user?.token && (
+        {user !== null && !user && (
           <p style={{ color: "#f87171" }}>Please log in to access this page.</p>
         )}
 
         {/* User loaded and has token */}
-        {user !== null && user?.token && (
+        {user !== null && user && (
           loading ? (
             <p style={{ color: "rgba(255,255,255,0.4)" }}>Loading vehicles...</p>
           ) : (

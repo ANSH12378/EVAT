@@ -34,7 +34,7 @@ function Profile() {
   const navigate = useNavigate();
   const location = useLocation();
   // Get user from Context
-  const { user: contextUser, setUser: setContextUser, updateUser: updateContextUser } = useContext(UserContext);
+  const { user, setUser: setContextUser, updateUser: updateContextUser } = useContext(UserContext);
 
   // Local editable copy for forms
   const [localUser, setLocalUser] = useState(null);
@@ -100,9 +100,6 @@ function Profile() {
     }
   }, [location, navigate]);
 
-  // get token from context if available, otherwise get from local storage
-  const token = contextUser?.token || JSON.parse(localStorage.getItem("currentUser"))?.token;
-
   // auto-clear the warning after 5 seconds
   useEffect(() => {
     if (isPaymentSuccess) {
@@ -116,7 +113,7 @@ function Profile() {
 
   // Fetch user profile on load
   useEffect(() => {
-    if (!token) {
+    if (!user) {
       navigate("/signin");
       return;
     }
@@ -126,7 +123,6 @@ function Profile() {
         // Fetch basic user profile (id, name, email, mobile, role)
         const authRes = await fetch(`${API_URL}/auth/profile`, {
           credentials: 'include',
-          headers: { Authorization: `Bearer ${token}` },
         });
         if (!authRes.ok) throw new Error("Failed to fetch auth profile");
         const authData = await authRes.json();
@@ -134,7 +130,6 @@ function Profile() {
         // Fetch detailed profile (car model, favourite stations)
         const profileRes = await fetch(`${API_URL}/profile/user-profile`, {
           credentials: 'include',
-          headers: { Authorization: `Bearer ${token}` },
         });
         if (!profileRes.ok)
           throw new Error("Failed to fetch user profile details");
@@ -147,7 +142,6 @@ function Profile() {
           // car is an ID - fetch full vehicle
           const vRes = await fetch(`${API_URL}/vehicle/${car}`, {
             credentials: 'include',
-            headers: { Authorization: `Bearer ${token}` },
           });
           if (vRes.ok) {
             const v = await vRes.json();
@@ -179,7 +173,6 @@ function Profile() {
           car,
           favourites: profileData.data.favourite_stations || [],
           avatarURL: profileData.data.avatarURL,
-          token: token,
         };
 
         setLocalUser(nextUser);
@@ -191,26 +184,23 @@ function Profile() {
     };
 
     fetchUserProfile();
-  }, [navigate, token]);
+  }, [navigate]);
 
   // Fetch user stats when profile loads
   useEffect(() => {
-    if (token) {
+    if (user) {
       fetchUserStats();
     }
-  }, [token]);
+  }, [user]);
 
   // Fetch user stats
   const fetchUserStats = async () => {
-    if (!token) return;
+    if (!user) return;
 
     try {
       setStatsLoading(true);
       const res = await fetch(`${API_URL}/user-stats/me`, {
         credentials: 'include',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       });
 
       if (!res.ok) throw new Error("Failed to fetch stats");
@@ -227,23 +217,20 @@ function Profile() {
 
   // Fetch recent achievements when profile loads
   useEffect(() => {
-    if (token) {
+    if (user) {
       fetchRecentAchievements();
     }
-  }, [token]);
+  }, [user]);
   
   // Fetch recent achievements
   const fetchRecentAchievements = async () => {
-    if (!token) return;
+    if (!user) return;
 
     try {
       setAchievementsLoading(true);
       const res = await fetch(`${API_URL}/achievements/me-recent?limit=6`, {
         credentials: 'include',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json", },
       });
 
       if (!res.ok) {
@@ -266,17 +253,16 @@ function Profile() {
     if (editingCar || activeTab === "env-impact") {
       fetchAllVehicles();
     }
-  }, [activeTab, editingCar, localUser?.token]);
+  }, [activeTab, editingCar, localUser]);
 
   // Reusable function to load all vehicles
   const fetchAllVehicles = async () => {
-    if (!localUser?.token || loadingVehicles) return;
+    if (!localUser || loadingVehicles) return;
 
     setLoadingVehicles(true);
     try {
       const res = await fetch(`${API_URL}/vehicle`, {
         credentials: 'include',
-        headers: { Authorization: `Bearer ${localUser.token}` },
       });
 
       if (!res.ok) throw new Error("Failed to fetch vehicles");
@@ -422,10 +408,7 @@ function Profile() {
       const response = await fetch(`${API_URL}/auth/profile`, {
         method: "PUT",
         credentials: 'include',
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localUser.token}`,
-        },
+        headers: { "Content-Type": "application/json", },
         body: JSON.stringify(payload),
       });
 
@@ -465,8 +448,6 @@ function Profile() {
 
   const handleSaveCar = async () => {
     try {
-      const token = localUser?.token;
-
       let newErrors = {};
 
       if (localUser.car.make == "Select") {
@@ -506,10 +487,7 @@ function Profile() {
       const response = await fetch(`${API_URL}/profile/vehicle-model`, {
         method: "POST",
         credentials: 'include',
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", },
         body: JSON.stringify(payload),
       });
 

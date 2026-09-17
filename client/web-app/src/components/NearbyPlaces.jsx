@@ -24,7 +24,7 @@ function formatDistance(place) {
   return `${(place.distanceMeters / 1000).toFixed(1)} km`;
 }
 
-function PlacePhoto({ place, token }) {
+function PlacePhoto({ place}) {
   const [src, setSrc] = useState(null);
   const [failed, setFailed] = useState(false);
 
@@ -42,7 +42,7 @@ function PlacePhoto({ place, token }) {
     setFailed(false);
     setSrc(null);
 
-    fetchPlacePhotoObjectUrl(place.photoName, { token, signal: abortController.signal })
+    fetchPlacePhotoObjectUrl(place.photoName, { signal: abortController.signal })
       .then((url) => {
         if (cancelled) {
           if (url) URL.revokeObjectURL(url);
@@ -61,7 +61,7 @@ function PlacePhoto({ place, token }) {
       abortController.abort();
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [place.photoName, token]);
+  }, [place.photoName]);
 
   if (!src || failed) {
     return (
@@ -84,7 +84,6 @@ function PlacePhoto({ place, token }) {
 
 export default function NearbyPlaces({ station }) {
   const { user } = useContext(UserContext);
-  const token = user?.token;
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -104,7 +103,7 @@ export default function NearbyPlaces({ station }) {
       setLoading(true);
       setError("");
       try {
-        const options = { category, token, signal: abortController.signal };
+        const options = { category, signal: abortController.signal };
         let response;
 
         if (station._id) {
@@ -135,7 +134,7 @@ export default function NearbyPlaces({ station }) {
       cancelled = true;
       abortController.abort();
     };
-  }, [station, category, token]);
+  }, [station, category]);
 
   return (
     <div>

@@ -4,8 +4,6 @@ import { useNavigate } from 'react-router-dom';
 
 export default function PersonalisedInsightsFormComponent() {
   const navigate = useNavigate();
-  const tokenFull = localStorage.getItem("currentUser");
-  const token = tokenFull ? JSON.parse(tokenFull).token : null;
 
   const [submitted, setSubmitted] = useState(false);
 
@@ -91,7 +89,7 @@ export default function PersonalisedInsightsFormComponent() {
       setLoading(true);
       setMessage("");
 
-      const response = await submitInsights(payload, token);
+      const response = await submitInsights(payload);
       console.log(response);
 
       setMessage("Form submitted successfully.");

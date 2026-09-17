@@ -13,6 +13,7 @@ import "../styles/PricePrediction.css";
 import { BRAND_MODELS, FUEL_TYPES, TRANSMISSIONS, CONDITIONS, formatAud } from "../utils/priceOptions";
 
 export default function PricePrediction() {
+  const { user } = useContext(UserContext);
   const [brand, setBrand] = useState("Tesla");
   const [model, setModel] = useState("Model 3");
   const [year, setYear] = useState(2022);
@@ -27,9 +28,6 @@ export default function PricePrediction() {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [result, setResult] = useState(null);
-
-  const tokenFull = localStorage.getItem("currentUser");
-  const token = tokenFull ? JSON.parse(tokenFull).token : null;
 
   // Numbers each health check. Checks can overlap (a slow first check and the re-check
   // after a prediction, say), so only the latest one may update the page.
@@ -79,7 +77,7 @@ export default function PricePrediction() {
     setServerError("");
     setResult(null);
 
-    if (!token) {
+    if (!user) {
       setServerError("Please sign in to run a prediction.");
       return;
     }
@@ -101,7 +99,7 @@ export default function PricePrediction() {
         Transmission: transmission,
         Condition: condition,
       };
-      const prediction = await predictPrice(features, token, "web-ui");
+      const prediction = await predictPrice(features, "web-ui");
       setResult(prediction);
       // A successful prediction proves the service is up; keep the banner consistent
       // with what just happened instead of leaving a stale "unavailable" message.

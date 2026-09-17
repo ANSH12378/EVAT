@@ -166,7 +166,7 @@ export default function Map() {
       };
       console.log(payload);
 
-      const data = await predictWeatherAwareRouting(payload, user?.token);
+      const data = await predictWeatherAwareRouting(payload);
 
       setWeatherResult(data);
 
@@ -212,7 +212,7 @@ export default function Map() {
   return (
     <div className={`map-page ${isDark ? "dark" : ""}`}>
       <div className='container-map'>
-        {!bbox && !loading && user?.token && (
+        {!bbox && !loading && user && (
           <div className="map-status-message map-info" style={{
             position: 'absolute',
             top: 12,
@@ -238,7 +238,7 @@ export default function Map() {
           </div>
         )}
 
-        {!user?.token && (
+        {!user && (
           <div className="map-status-message map-warning" style={{
             position: 'absolute',
             top: 12,

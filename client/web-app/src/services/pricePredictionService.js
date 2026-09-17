@@ -1,10 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
-const authHeaders = (token) => ({
-  "Content-Type": "application/json",
-  Authorization: `Bearer ${token}`,
-});
-
 async function handleResponse(response) {
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
@@ -17,7 +12,8 @@ async function handleResponse(response) {
 export const predictPrice = async (features, token, rowId) => {
   const response = await fetch(`${API_URL}/predict/price`, {
     method: "POST",
-    headers: authHeaders(token),
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ features, row_id: rowId }),
   });
   return handleResponse(response);
@@ -27,7 +23,8 @@ export const predictPrice = async (features, token, rowId) => {
 export const predictPriceBatch = async (records, token) => {
   const response = await fetch(`${API_URL}/predict/price/batch`, {
     method: "POST",
-    headers: authHeaders(token),
+    credentials: "include", 
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ records }),
   });
   return handleResponse(response);
@@ -37,7 +34,7 @@ export const predictPriceBatch = async (records, token) => {
 export const getPriceSchema = async (token) => {
   const response = await fetch(`${API_URL}/predict/price/schema`, {
     method: "GET",
-    headers: authHeaders(token),
+    credentials: "include", 
   });
   return handleResponse(response);
 };
@@ -46,7 +43,7 @@ export const getPriceSchema = async (token) => {
 export const getPriceModelInfo = async (token) => {
   const response = await fetch(`${API_URL}/predict/price/model/info`, {
     method: "GET",
-    headers: authHeaders(token),
+    credentials: "include", 
   });
   return handleResponse(response);
 };

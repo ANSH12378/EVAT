@@ -56,13 +56,13 @@ export default function ChargerSideBar({ station, onClose }) {
       const [reviewsResponse, statsResponse, congestionResponse] = await Promise.all([
         getChargerReviews(station._id),
         getChargerReviewStats(station._id),
-        getChargerCongestion([station._id], user?.token)
+        getChargerCongestion(station._id),
       ]);
 
       // Change the username value
-      if (user?.token) { // User is signed in
+      if (user) { // User is signed in
         for (var i in reviewsResponse['data']['reviews']) { // Replace the username value with the first name
-          var username = await getUsername(reviewsResponse['data']['reviews'][i]['userId'], user.token);
+          var username = await getUsername(reviewsResponse['data']['reviews'][i]['userId']);
           reviewsResponse['data']['reviews'][i]['userName'] = username['data']['firstName'] || '';
         }
       }
@@ -89,9 +89,9 @@ export default function ChargerSideBar({ station, onClose }) {
       setReviewStats(statsResponse.data || { averageRating: 0, totalReviews: 0 });
 
       // Check if user has already reviewed this charger
-      if (user?.token) {
+      if (user) {
         try {
-          const userStatusResponse = await checkUserReviewStatus(station._id, user.token);
+          const userStatusResponse = await checkUserReviewStatus(station._id);
           setUserHasReviewed(userStatusResponse.data?.hasReviewed || false);
           setExistingUserReview(userStatusResponse.data?.userReview || null);
 
@@ -123,8 +123,8 @@ export default function ChargerSideBar({ station, onClose }) {
 
   const handleSubmitReview = async () => {
     // Prevent submitting a review if one of these aren't present
-    if (!userReview.rating || !userReview.comment || !station?._id || !user?.token) {
-      if (!user?.token) { // Is user signed in?
+    if (!userReview.rating || !userReview.comment || !station?._id || !user) {
+      if (!user) { // Is user signed in?
         alert('Please sign in to submit a review.');
         return;
       }
@@ -148,7 +148,7 @@ export default function ChargerSideBar({ station, onClose }) {
       );
     }
 
-    if (user.rating < 0 || user.rating > 5) { // Prevent malformed reviews
+    if (userReview.rating < 0 || userReview.rating > 5) { // Prevent malformed reviews
       toast.error(
         <div>
           Rating must be between 1 and 5!
@@ -169,7 +169,7 @@ export default function ChargerSideBar({ station, onClose }) {
 
       if (userHasReviewed && existingUserReview) {
         // Update existing review
-        await updateChargerReview(existingUserReview.id, reviewData, user.token);
+        await updateChargerReview(existingUserReview.id, reviewData);
         toast.success(
           <div>
             Review Updated Successfully!
@@ -182,7 +182,7 @@ export default function ChargerSideBar({ station, onClose }) {
           chargerId: station._id,
           ...reviewData
         };
-        await submitChargerReview(newReviewData, user.token);
+        await submitChargerReview(newReviewData);
         toast.success(
           <div>
             Review Submitted Successfully!
@@ -277,7 +277,7 @@ export default function ChargerSideBar({ station, onClose }) {
         <div className="action-buttons">
           <button
             onClick={async () => {
-              if (!user?.token) {
+              if (!user) {
                 alert('Please sign in to save favorites.');
                 return;
               }
@@ -306,7 +306,7 @@ export default function ChargerSideBar({ station, onClose }) {
           {/* review button */}
           <button
             onClick={() => {
-              if (!user?.token) {
+              if (!user) {
                 alert('Please sign in to review this charger.');
                 return;
               }
