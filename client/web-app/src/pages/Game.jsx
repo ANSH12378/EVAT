@@ -32,6 +32,7 @@ function Game() {
     const fetchProfile = async () => {
       try {
         const res = await fetch("http://localhost:8080/api/gamification/profile", {
+          credentials: "include",
           headers: { Authorization: `Bearer ${user.token}` },
         });
 
@@ -53,6 +54,7 @@ function Game() {
   const refreshProfile = async () => {
     try {
       const res = await fetch("http://localhost:8080/api/gamification/profile", {
+        credentials: "include",
         headers: { Authorization: `Bearer ${user.token}` },
       });
       if (!res.ok) throw new Error("Failed to refresh profile");
@@ -71,6 +73,7 @@ function Game() {
 
       const res = await fetch("http://localhost:8080/api/gamification/action", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${user.token}`,
@@ -108,6 +111,7 @@ function Game() {
 
       const res = await fetch("http://localhost:8080/api/gamification/action", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${user.token}`,
@@ -137,7 +141,10 @@ function Game() {
     }
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    try {
+      await fetch("http://localhost:8080/api/auth/logout", { method: 'POST', credentials: 'include' });
+    } catch(e) {}
     localStorage.removeItem("currentUser");
     navigate("/signin");
   };

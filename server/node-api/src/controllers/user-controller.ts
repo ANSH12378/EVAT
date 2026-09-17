@@ -109,7 +109,7 @@ export default class UserController {
                     return res.status(200).json({
                         message: "Automatic Login Successful",
                         data: {
-                            user,
+                            user: new UserItemResponse(user),
                             accessToken: newAccessToken,
                         },
                     });

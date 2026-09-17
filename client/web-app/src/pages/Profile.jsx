@@ -125,6 +125,7 @@ function Profile() {
       try {
         // Fetch basic user profile (id, name, email, mobile, role)
         const authRes = await fetch(`${API_URL}/auth/profile`, {
+          credentials: 'include',
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!authRes.ok) throw new Error("Failed to fetch auth profile");
@@ -132,6 +133,7 @@ function Profile() {
 
         // Fetch detailed profile (car model, favourite stations)
         const profileRes = await fetch(`${API_URL}/profile/user-profile`, {
+          credentials: 'include',
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!profileRes.ok)
@@ -144,6 +146,7 @@ function Profile() {
         if (car && typeof car === "string") {
           // car is an ID - fetch full vehicle
           const vRes = await fetch(`${API_URL}/vehicle/${car}`, {
+            credentials: 'include',
             headers: { Authorization: `Bearer ${token}` },
           });
           if (vRes.ok) {
@@ -204,6 +207,7 @@ function Profile() {
     try {
       setStatsLoading(true);
       const res = await fetch(`${API_URL}/user-stats/me`, {
+        credentials: 'include',
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -235,6 +239,7 @@ function Profile() {
     try {
       setAchievementsLoading(true);
       const res = await fetch(`${API_URL}/achievements/me-recent?limit=6`, {
+        credentials: 'include',
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -270,6 +275,7 @@ function Profile() {
     setLoadingVehicles(true);
     try {
       const res = await fetch(`${API_URL}/vehicle`, {
+        credentials: 'include',
         headers: { Authorization: `Bearer ${localUser.token}` },
       });
 
@@ -321,7 +327,10 @@ function Profile() {
     if (activeTab !== "about") setEditingAbout(false);
   }, [activeTab]);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    try {
+        await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+    } catch(err) { console.error(err); }
     localStorage.removeItem("currentUser");
     navigate("/signin");
   };
@@ -412,6 +421,7 @@ function Profile() {
 
       const response = await fetch(`${API_URL}/auth/profile`, {
         method: "PUT",
+        credentials: 'include',
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localUser.token}`,
@@ -495,6 +505,7 @@ function Profile() {
 
       const response = await fetch(`${API_URL}/profile/vehicle-model`, {
         method: "POST",
+        credentials: 'include',
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,

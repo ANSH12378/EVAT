@@ -40,6 +40,7 @@ function Achievements() {
         try {
             const res = await fetch(`${API_URL}/user-stats/test/increment`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
@@ -72,6 +73,7 @@ function Achievements() {
         try {
             const res = await fetch(`${API_URL}/user-stats/test/set-flag`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
@@ -100,6 +102,7 @@ function Achievements() {
         try {
             const res = await fetch(`${API_URL}/user-stats/reset-flags`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
@@ -125,6 +128,7 @@ function Achievements() {
         try {
             const res = await fetch(`${API_URL}/user-stats/reset-counters`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
@@ -151,6 +155,7 @@ function Achievements() {
             try {
                 const res = await fetch(`${API_URL}/user-stats/reset`, {
                     method: 'POST',
+                    credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${token}`,
@@ -176,6 +181,7 @@ function Achievements() {
             setLoading(true);
             // Fetch User Stats
             const statsRes = await fetch(`${API_URL}/user-stats/me`, {
+                credentials: 'include',
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (statsRes.ok) {
@@ -185,6 +191,7 @@ function Achievements() {
 
             // Fetch All Achievements with progress
             const achRes = await fetch(`${API_URL}/achievements`, {
+                credentials: 'include',
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (achRes.ok) {

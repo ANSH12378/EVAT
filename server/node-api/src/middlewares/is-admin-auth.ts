@@ -7,6 +7,11 @@ export const isAdminAuthenticated = (req: Request, res: Response, next: NextFunc
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+
+    if (decoded.admin) {
+      return next();
+    }
+
     if (decoded.type !== 'access') {
       return res.status(401).json({message: "Invalid token: must be an access token"});
     }

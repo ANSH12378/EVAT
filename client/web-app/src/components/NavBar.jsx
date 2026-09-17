@@ -14,7 +14,19 @@ function NavBar() {
     const { user, updateUser } = useContext(UserContext);
     
     // Handle Sign out
-    const handleSignOut = () => {
+    const handleSignOut = async () => {
+        try {
+            // Hit the backend to destroy the secure cookie
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+            await fetch(`${API_URL}/auth/logout`, { 
+                method: 'POST', 
+                credentials: 'include' 
+            });
+        } catch (err) {
+            console.error("Logout failed:", err);
+        }
+        
+        // Clear frontend state and redirect
         localStorage.removeItem("currentUser");
         navigate("/signin");
     };
