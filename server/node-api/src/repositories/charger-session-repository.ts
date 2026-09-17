@@ -57,4 +57,67 @@ export default class ChargerSessionRepository {
     .skip(skip)
     .limit(limit);
   }
+
+  // Get occupancy statistics by hour for a station (for insights & predictions)
+  async getStationOccupancyByHour(
+    stationId: string,
+    dateRangeInDays: number = 30
+  ): Promise<{
+    occupancyByHour: { [hour: number]: number };
+    totalSessions: number;
+    dateRange: { start: Date; end: Date };
+  }> {
+    try {
+      // Calculate date range
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - dateRangeInDays);
+
+      // Query sessions for this station within the date range
+      const sessions = await ChargerSession.find({
+        stationId: new Types.ObjectId(stationId),
+        startTime: { $gte: startDate, $lte: endDate },
+        status: { $in: ['completed', 'in_progress'] },
+      })
+        .select('startTime endTime')
+        .lean();
+
+      // Group sessions by hour-of-day and count
+      const occupancyByHour: { [hour: number]: number[] } = {};
+      for (let i = 0; i < 24; i++) {
+        occupancyByHour[i] = [];
+      }
+
+      sessions.forEach((session) => {
+        const sessionStart = new Date(Math.max(new Date(session.startTime).getTime(), startDate.getTime()));
+        const sessionEnd = new Date(Math.min(new Date(session.endTime ?? endDate).getTime(), endDate.getTime()));
+
+        for (
+          const occupiedHour = new Date(sessionStart);
+          occupiedHour < sessionEnd;
+          occupiedHour.setHours(occupiedHour.getHours() + 1, 0, 0, 0)
+        ) {
+          occupancyByHour[occupiedHour.getHours()].push(1);
+        }
+      });
+
+      // Calculate average sessions per hour
+      const occupancyStats: { [hour: number]: number } = {};
+      for (let i = 0; i < 24; i++) {
+        const count = occupancyByHour[i].length;
+        occupancyStats[i] = count > 0
+          ? Math.round((count / dateRangeInDays) * 100) / 100 // average sessions per that hour per day
+          : 0;
+      }
+
+      return {
+        occupancyByHour: occupancyStats,
+        totalSessions: sessions.length,
+        dateRange: { start: startDate, end: endDate },
+      };
+    } catch (error: any) {
+      console.error(`Error getting occupancy for station ${stationId}:`, error);
+      throw error;
+    }
+  }
 }
