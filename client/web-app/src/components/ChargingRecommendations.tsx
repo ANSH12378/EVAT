@@ -15,7 +15,7 @@ import clsx from "clsx";
 type Station = unknown;
 
 
-function ChargingRecommendations() {
+function ChargingRecommendations({ className }) {
 /* const mockRecommendations = [
   {
     rank: 1,
@@ -153,6 +153,7 @@ function ChargingRecommendations() {
         '[&::-webkit-scrollbar-thumb]:bg-foreground [&::-webkit-scrollbar-thumb]:rounded-md',
         '[&::-webkit-scrollbar-thumb:hover]:bg-emerald-700',
         'md:inset-x-auto md:max-w-sm md:bottom-[unset] md:top-2 md:right-4 md:rounded-xl xl:top-4',
+        className,
       )}
     >
       <div className={twMerge(clsx('flex justify-between gap-x-2 text-error', !isMinimized && 'mb-4'))}>
@@ -166,7 +167,6 @@ function ChargingRecommendations() {
             outline-1 outline-primary/25
             hover:bg-primary/25
           "
-          variant="unstyled"
           onClick={() => setIsMinimized(!isMinimized)}
           aria-label={isMinimized ? "Expand recommendations" : "Minimize recommendations"}
         >
@@ -194,7 +194,7 @@ function ChargingRecommendations() {
                 type="error"
                 variant="outline"
               >
-                <span class="text-xs text-red-700 inline-flex items-center justify-center gap-x-1 dark:text-red-300">
+                <span className="text-xs text-red-700 inline-flex items-center justify-center gap-x-1 dark:text-red-300">
                   <XIcon className="size-4" />
                   {error}
                 </span>

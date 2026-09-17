@@ -4,6 +4,8 @@ import "react-datepicker/dist/react-datepicker.css";
 import { toast } from "react-toastify";
 import ErrorMessage from "../components/ErrorMessage";
 import { Button } from "./Button";
+import { Input } from "./Input";
+import { Textarea } from "./Textarea";
 
 const API_URL = import.meta.env.VITE_API_URL
 const BOOKING_ENDPOINT = `${API_URL}/bookings`;
@@ -19,6 +21,7 @@ export default function SidebarBookingTool({ stationName = "Unknown Station" }) 
   const [agree, setAgree] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [recentBookingWarning, setRecentBookingWarning] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   useEffect(() => {
     // load current user
@@ -179,78 +182,100 @@ export default function SidebarBookingTool({ stationName = "Unknown Station" }) 
   };
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between gap-4">
-        {/* date picker */}
-        <label className="font-medium" >Date</label>
-        <DatePicker
-          className="date-picker"
-          popperPlacement="right"
-          selected={selectedDate}
-          onChange={(d) => setSelectedDate(d)}
-          dateFormat="yyyy-MM-dd"
-          minDate={new Date()}
-          placeholderText="YYYY-MM-DD"
-        />
+    <>
+      <div className="flex justify-between items-center">
+        <h6 class="font-bold">Book A Charging Session</h6>
+        
+        <button
+          className="
+            flex items-center justify-center size-6
+            rounded-md
+            cursor-pointer
+            outline-1 outline-primary/25
+            hover:bg-primary/25
+          "
+          onClick={() => setIsMinimized(!isMinimized)}
+          aria-label={isMinimized ? "Expand booking form" : "Minimize booking form"}
+        >
+          {isMinimized ? "+" : "−"}
+        </button>
       </div>
-      <div className="mb-4 flex items-center justify-between gap-4">
-        {/* time picker */}
-        <label  className="font-medium">Time</label>
-        <DatePicker
-          popperPlacement="right"
-          selected={selectedTime}
-          onChange={(t) => setSelectedTime(t)}
-          showTimeSelect
-          showTimeSelectOnly
-          timeIntervals={15}
-          timeCaption="Time"
-          dateFormat="hh:mm aa"
-          placeholderText="hh:mm"
-        />
-      </div>
-      <div>
-        {/* warning if selected date and time is in the past */}
-        {selectedDate && selectedTime && isPastDateTime() && (
-          <ErrorMessage error="Selected time is in the past" />
-        )}
-      </div>
-      <div>
-        {/* notes text area - does not accept characters past the limit */}
-        <label className="mb-2 block font-medium" >
-          Notes (optional) - <span className="text-xs text-gray-500">{notesRemaining} characters remaining</span>
+
+      {!isMinimized && <div>
+        <div className="mb-4 flex items-center justify-between gap-4">
+          {/* date picker */}
+          <label className="font-medium" >Date</label>
+          <DatePicker
+            className="date-picker"
+            popperPlacement="right"
+            selected={selectedDate}
+            onChange={(d) => setSelectedDate(d)}
+            customInput={<Input />}
+            dateFormat="yyyy-MM-dd"
+            minDate={new Date()}
+            placeholderText="YYYY-MM-DD"
+          />
+        </div>
+        <div className="mb-4 flex items-center justify-between gap-4">
+          {/* time picker */}
+          <label  className="font-medium">Time</label>
+          <DatePicker
+            popperPlacement="right"
+            selected={selectedTime}
+            onChange={(t) => setSelectedTime(t)}
+            showTimeSelect
+            showTimeSelectOnly
+            customInput={<Input />}
+            timeIntervals={15}
+            timeCaption="Time"
+            dateFormat="hh:mm aa"
+            placeholderText="hh:mm"
+          />
+        </div>
+        <div>
+          {/* warning if selected date and time is in the past */}
+          {selectedDate && selectedTime && isPastDateTime() && (
+            <ErrorMessage error="Selected time is in the past" />
+          )}
+        </div>
+        <div>
+          {/* notes text area - does not accept characters past the limit */}
+          <label className="mb-2 block font-medium" >
+            Notes (optional) - <span className="text-xs text-gray-500">{notesRemaining} characters remaining</span>
+          </label>
+          <Textarea
+            // className="min-h-24 w-full resize-y rounded-lg border-2 border-white bg-gray-100 px-3 py-2 text-black transition focus:border-emerald-500 focus:bg-white focus:outline-none"
+            value={notes} 
+            onChange={(e) => setNotes(e.target.value.slice(0, NOTES_MAX_LENGTH))} // cut the string at the max length
+            placeholder="Any notes..." 
+            rows={3}
+          />
+        </div>
+
+        {/* agree to booking terms checkbox */}
+        <label className="mt-4 flex items-center gap-2">
+          <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
+          <span className="text-sm italic text-gray-600">I agree to booking terms</span>
         </label>
-        <textarea 
-          className="min-h-24 w-full resize-y rounded-lg border-2 border-white bg-gray-100 px-3 py-2 text-black transition focus:border-emerald-500 focus:bg-white focus:outline-none"
-          value={notes} 
-          onChange={(e) => setNotes(e.target.value.slice(0, NOTES_MAX_LENGTH))} // cut the string at the max length
-          placeholder="Any notes..." 
-          rows={3}
-        />
-      </div>
 
-      {/* agree to booking terms checkbox */}
-      <label className="mt-4 flex items-center gap-2">
-        <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
-        <span className="text-sm italic text-gray-600">I agree to booking terms</span>
-      </label>
+        {/* recent booking warning */}
+        {recentBookingWarning && (
+          <ErrorMessage error="Please wait a few seconds before booking again." />
+        )}
 
-      {/* recent booking warning */}
-      {recentBookingWarning && (
-        <ErrorMessage error="Please wait a few seconds before booking again." />
-      )}
-
-      {/* confirm booking button */}
-      <Button
-        type="button"
-        size="small"
-        className="w-full uppercase"
-        onClick={handleConfirm}
-        disabled={!selectedDate || !selectedTime || !agree || isPastDateTime()}
-        loading={submitting}
-        loadingLabel="Submitting..."
-      >
-        Confirm Booking
-      </Button>
-    </div>
+        {/* confirm booking button */}
+        <Button
+          type="button"
+          size="small"
+          className="w-full uppercase"
+          onClick={handleConfirm}
+          disabled={!selectedDate || !selectedTime || !agree || isPastDateTime()}
+          loading={submitting}
+          loadingLabel="Submitting..."
+        >
+          Confirm Booking
+        </Button>
+      </div>}
+    </>
   );
 }

@@ -484,7 +484,13 @@ useEffect(() => {
     <>
       <NavBar />
       <NearbyPlacesProvider station={selectedStation}>
-        <div className="relative h-(--content-height) overflow-auto [&~#evchatbubble-btn]:[--evchatbubble-button-bottom:--spacing(16)] [&~#evchatbubble-btn]:[--evchatbubble-button-bottom-md:--spacing(4)]">
+        <div
+          className="
+            relative h-(--content-height) overflow-auto
+            [&~#evchatbubble-btn]:[--evchatbubble-button-bottom:--spacing(16)] [&~#evchatbubble-btn]:[--evchatbubble-button-bottom-md:--spacing(4)]
+            dark:[&_.leaflet-tile-pane]:invert-90 dark:[&_.leaflet-tile-pane]:hue-rotate-180
+          "
+        >
           {loading && bbox && (
             <Banner type="info" className="absolute z-11 font-medium max-w-80 top-2 right-2 md:top-[unset] md:right-[unset] md:bottom-4 md:left-4">
               Loading charging stations…
@@ -575,7 +581,7 @@ useEffect(() => {
             toggleFavourite={toggleFavourite}
           />
 
-          <ChargingRecommendations />
+          <ChargingRecommendations className={selectedStation ? "hidden md:block" : ""} />
           
           {/* Voice Assistant floating button - opens popup with VoiceQuery */}
           <FloatingVoiceAssistant onQueryResult={handleVoiceResult} />
