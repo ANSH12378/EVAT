@@ -9,8 +9,16 @@ import {
 describe("google-nearby-places-service helpers", () => {
   test("Case: Maps food and shopping categories to Google place types", () => {
     expect(includedTypesForCategory("food")).toContain("restaurant");
+    expect(includedTypesForCategory("food")).toContain("meal_takeaway");
     expect(includedTypesForCategory("shopping")).toContain("shopping_mall");
-    expect(includedTypesForCategory("all").length).toBeGreaterThan(2);
+    expect(includedTypesForCategory("shopping")).toContain("clothing_store");
+    expect(includedTypesForCategory("all")).toEqual(
+      expect.arrayContaining([
+        "meal_takeaway",
+        "clothing_store",
+        "department_store",
+      ])
+    );
   });
 
   test("Case: Rejects unknown categories", () => {

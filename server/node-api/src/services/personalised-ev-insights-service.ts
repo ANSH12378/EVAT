@@ -111,7 +111,10 @@ export default class PersonalisedEVInsightsService {
   private async getPrediction(
     payload: PersonalisedEVInsightsPayload
   ): Promise<PersonalisedPrediction> {
-    const response = await axios.post(`${PYTHON_API}/personalisedEVInsights/predict`, payload);
+    const response = await axios.post<PersonalisedPrediction>(
+      `${PYTHON_API}/personalisedEVInsights/predict`,
+      payload
+    );
 
     if (!Number.isInteger(response.data?.cluster)) {
       throw new Error("Invalid cluster response from Python API");
