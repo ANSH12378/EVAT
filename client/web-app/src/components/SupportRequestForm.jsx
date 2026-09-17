@@ -106,17 +106,14 @@ export default function SupportRequestForm() {
 
     setSubmitting(true);
     try {
-      const response = await submitSupportRequest({
+      const data = await submitSupportRequest({
         name: name,
         email: email,
         issue: issue,
         description: description,
         userId: userId,
       });
-      console.log(response);
-
-      let data;
-      try { data = await response.json(); } catch { data = {}; }
+      console.log(data);
       
       // Save locally (optional quick UX)
       const prev = JSON.parse(localStorage.getItem("supportRequests") || "[]");

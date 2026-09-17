@@ -21,7 +21,7 @@ export async function createSupportRequest(req: Request, res: Response) {
         throw new Error("Cannot submit feedback with potentially malicious Javascript/HTML.");
     }
 
-    if (!issue || !description) {
+    if (!issue || !sanitizedDescription) {
       return res.status(400).json({ message: "issue and description are required" });
     }
 
@@ -38,7 +38,7 @@ export async function createSupportRequest(req: Request, res: Response) {
       name,
       email: email?.toLowerCase(),
       issue,
-      description,
+      description: sanitizedDescription,
       requestNo: nextNo,
       reference: `SR-${nextNo}`,
     });
