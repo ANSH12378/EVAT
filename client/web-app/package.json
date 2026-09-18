@@ -27,7 +27,7 @@
     "globals": "^17.8.0",
     "tailwind-merge": "^3.6.0",
     "typescript-eslint": "^8.65.0",
-    "vite": "^8.2.0"
+    "vite": "^7.0.0"
   },
   "dependencies": {
     "@mapbox/polyline": "^1.2.1",
