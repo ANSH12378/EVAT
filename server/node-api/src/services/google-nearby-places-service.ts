@@ -29,13 +29,17 @@ const CATEGORY_PLACE_TYPES: Record<string, string[]> = {
     "clothing_store",
     "department_store",
   ],
+  // Keep "all" as the full union so broad searches are not missing category types.
   all: [
     "restaurant",
     "cafe",
     "bakery",
+    "meal_takeaway",
     "supermarket",
     "shopping_mall",
     "convenience_store",
+    "clothing_store",
+    "department_store",
   ],
 };
 

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { submitInsights } from "../services/personalisedEvInsightsService";
 import { useNavigate } from 'react-router-dom';
+import { Car, Fuel, Leaf } from 'lucide-react';
 
 export default function PersonalisedInsightsFormComponent() {
   const navigate = useNavigate();
@@ -67,23 +68,22 @@ export default function PersonalisedInsightsFormComponent() {
     if (inputs.charging_convenience) {priorities.push("Charging convenience")}
     if (inputs.tech_features) {priorities.push("Tech features")}
     if (inputs.brand_design) {priorities.push("Brand/ design")}
-    formData.priorities = priorities.join(", ")
-    console.log(formData.priorities);
+    const selectedPriorities = priorities.join(", ");
 
     const payload = {
-      weekly_km: formData.weekly_km,
+      weekly_km: Number(formData.weekly_km),
       trip_length: formData.trip_length,
       driving_frequency: formData.driving_frequency,
       driving_type: formData.driving_type,
       road_trips: formData.road_trips,
       car_ownership: formData.car_ownership,
-      fuel_efficiency: formData.fuel_efficiency,
-      monthly_fuel_spend: formData.monthly_fuel_spend,
+      fuel_efficiency: Number(formData.fuel_efficiency),
+      monthly_fuel_spend: Number(formData.monthly_fuel_spend),
       home_charging: formData.home_charging,
       solar_panels: formData.solar_panels,
       charging_preference: formData.charging_preference,
       budget: formData.budget,
-      priorities: formData.priorities,
+      priorities: selectedPriorities,
       postcode: formData.postcode,
     }
 
@@ -91,9 +91,7 @@ export default function PersonalisedInsightsFormComponent() {
       setLoading(true);
       setMessage("");
 
-      const response = await submitInsights(payload, token);
-      console.log(response);
-
+      await submitInsights(payload, token);
       setMessage("Form submitted successfully.");
 
       setFormData({
@@ -112,6 +110,14 @@ export default function PersonalisedInsightsFormComponent() {
         priorities: "",
         postcode: ""
       });
+      setInputs({
+        affordability: false,
+        driving_range: false,
+        environmental_impact: false,
+        charging_convenience: false,
+        tech_features: false,
+        brand_design: false,
+      });
       setSubmitted(true);
     } catch (error) {
       console.error("Submission error:", error);
@@ -122,18 +128,19 @@ export default function PersonalisedInsightsFormComponent() {
   };
 
   return (
-    <div className="insights-page-wrapper">
-      <div className="insights-panel">
-        <h1 className="insights-title">Personalised EV Usage Insights</h1>
-        <p className="insights-subtitle">
+    <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <header className="mb-6 text-center sm:mb-8">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">Personalised EV Usage Insights</h1>
+        <p className="mx-auto mt-3 max-w-3xl text-sm leading-6 text-slate-500 dark:text-gray-400 sm:text-base">
           Fill in your details to receive personalised EV insights based on your
           driving behaviour.
         </p>
 
-        <form onSubmit={handleSubmit} className="insights-form">
-          <div className="insights-grid">
-            <div>
-              <h3 className="insights-section-title">Driving Details</h3>
+      </header>
+      <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-[#050806] p-5 shadow-[0_6px_25px_rgba(15,23,42,0.06)] dark:shadow-none sm:p-6 lg:p-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
+          <section className="min-w-0 space-y-4" aria-label="Driving Details">
+            <h2 className="mb-5 flex items-center gap-3 text-xl font-bold text-slate-900 dark:text-white"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400"><Car className="h-5 w-5" aria-hidden="true" /></span>Driving Details</h2>
 
               <div className="form-section">
                 <label className="form-label required">Weekly KM</label>
@@ -143,85 +150,97 @@ export default function PersonalisedInsightsFormComponent() {
                   placeholder="e.g. 250"
                   value={formData.weekly_km}
                   onChange={handleChange}
+                  min="0"
+                  required
                 />
               </div>
 
-              <div className="form-section">
-                <label className="form-label required">Typical Trip Length</label>
-                <select
-                  name="trip_length"
-                  value={formData.trip_length}
-                  onChange={handleChange}
-                >
-                  <option value="">Select trip length</option>
-                  <option value="Mostly short trips (<10 km)">Short</option>
-                  <option value="Mostly medium trips (10-50 km)">Medium</option>
-                  <option value="Mostly long trips (>50 km)">Long</option>
-                </select>
-              </div>
-
-              <div className="form-section">
-                <label className="form-label required">Driving Frequency</label>
-                <select
-                  name="driving_frequency"
-                  value={formData.driving_frequency}
-                  onChange={handleChange}
-                >
-                  <option value="">Select driving frequency</option>
-                  <option value="Daily">Daily</option>
-                  <option value="A few times a week">Few times a week</option>
-                  <option value="Weekly">Weekly</option>
-                  <option value="Occasionally">Occasionally</option>
-                </select>
-              </div>
-
-              <div className="form-section">
-                <label className="form-label required">Driving Type</label>
-                <select
-                  name="driving_type"
-                  value={formData.driving_type}
-                  onChange={handleChange}
-                >
-                  <option value="">Select driving type</option>
-                  <option value="Mostly inner-city or suburban driving (short distances/stop-start traffic)">Inner-city or suburban</option>
-                  <option value="Mostly highway or regional driving (longer distances/higher speeds)">Highways or regional</option>
-                  <option value="A mix of city/suburban and highway driving">Suburban and highways</option>
-                  <option value="Mostly rural or remote area driving (long distances/variable road conditions)">Rural or remote</option>
-                </select>
-              </div>
-
-              <div className="form-section">
-                <label className="form-label required">Do you regularly go on long road trips?</label>
-                <select
-                  name="road_trips"
-                  value={formData.road_trips}
-                  onChange={handleChange}
-                >
-                  <option value="">Select option</option>
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-              </div>
-
-              <div className="form-section">
-                <label className="form-label required">Do you own a vehicle</label>
-                <select
-                  name="car_ownership"
-                  value={formData.car_ownership}
-                  onChange={handleChange}
-                >
-                  <option value="">Select ownership</option>
-                  <option value="Yes - Petrol">Petrol</option>
-                  <option value="Yes - Diesel">Diesel</option>
-                  <option value="Yes - Hybrid">Hybrid</option>
-                  <option value="Yes - Electric">Electric</option>
-                  <option value="No - I don't own a car">No car</option>
-                </select>
-              </div>
+            <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+              <label htmlFor="insights-trip_length" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Typical Trip Length <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>
+              <select
+                id="insights-trip_length"
+                className="w-full min-w-0 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-950 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 transition-colors hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-white dark:hover:bg-gray-900 focus:border-emerald-500 dark:focus:border-emerald-700 focus:bg-white dark:focus:bg-gray-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+                name="trip_length"
+                value={formData.trip_length}
+                onChange={handleChange}
+              >
+                <option value="">Select trip length</option>
+                <option value="Mostly short trips (<10 km)">Short</option>
+                <option value="Mostly medium trips (10-50 km)">Medium</option>
+                <option value="Mostly long trips (>50 km)">Long</option>
+              </select>
             </div>
 
-            <div>
-              <h3 className="insights-section-title">Fuel and Charging</h3>
+            <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+              <label htmlFor="insights-driving_frequency" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Driving Frequency <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>
+              <select
+                id="insights-driving_frequency"
+                className="w-full min-w-0 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-950 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 transition-colors hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-white dark:hover:bg-gray-900 focus:border-emerald-500 dark:focus:border-emerald-700 focus:bg-white dark:focus:bg-gray-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+                name="driving_frequency"
+                value={formData.driving_frequency}
+                onChange={handleChange}
+              >
+                <option value="">Select driving frequency</option>
+                <option value="Daily">Daily</option>
+                <option value="A few times a week">Few times a week</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Occasionally">Occasionally</option>
+              </select>
+            </div>
+
+            <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+              <label htmlFor="insights-driving_type" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Driving Type <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>
+              <select
+                id="insights-driving_type"
+                className="w-full min-w-0 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-950 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 transition-colors hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-white dark:hover:bg-gray-900 focus:border-emerald-500 dark:focus:border-emerald-700 focus:bg-white dark:focus:bg-gray-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+                name="driving_type"
+                value={formData.driving_type}
+                onChange={handleChange}
+              >
+                <option value="">Select driving type</option>
+                <option value="Mostly inner-city or suburban driving (short distances/stop-start traffic)">Inner-city or suburban</option>
+                <option value="Mostly highway or regional driving (longer distances/higher speeds)">Highways or regional</option>
+                <option value="A mix of city/suburban and highway driving">Suburban and highways</option>
+                <option value="Mostly rural or remote area driving (long distances/variable road conditions)">Rural or remote</option>
+              </select>
+            </div>
+
+            <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+              <label htmlFor="insights-road_trips" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Do you regularly go on long road trips? <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>
+              <select
+                id="insights-road_trips"
+                className="w-full min-w-0 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-950 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 transition-colors hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-white dark:hover:bg-gray-900 focus:border-emerald-500 dark:focus:border-emerald-700 focus:bg-white dark:focus:bg-gray-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+                name="road_trips"
+                value={formData.road_trips}
+                onChange={handleChange}
+              >
+                <option value="">Select option</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+
+            <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+              <label htmlFor="insights-car_ownership" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Do you own a vehicle <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>
+              <select
+                id="insights-car_ownership"
+                className="w-full min-w-0 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-950 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 transition-colors hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-white dark:hover:bg-gray-900 focus:border-emerald-500 dark:focus:border-emerald-700 focus:bg-white dark:focus:bg-gray-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+                name="car_ownership"
+                value={formData.car_ownership}
+                onChange={handleChange}
+              >
+                <option value="">Select ownership</option>
+                <option value="Yes - Petrol">Petrol</option>
+                <option value="Yes - Diesel">Diesel</option>
+                <option value="Yes - Hybrid">Hybrid</option>
+                <option value="Yes - Electric">Electric</option>
+                <option value="No - I don't own a car">No car</option>
+              </select>
+            </div>
+          </section>
+
+          <section className="min-w-0 space-y-4 border-t border-slate-200 dark:border-gray-800 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0" aria-label="Fuel and Charging">
+            <h2 className="mb-5 flex items-center gap-3 text-xl font-bold text-slate-900 dark:text-white"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400"><Fuel className="h-5 w-5" aria-hidden="true" /></span>Fuel and Charging</h2>
 
               <div className="form-section">
                 <label className="form-label required">Fuel Efficiency (L/100km)</label>
@@ -231,6 +250,9 @@ export default function PersonalisedInsightsFormComponent() {
                   placeholder="e.g. 7.5"
                   value={formData.fuel_efficiency}
                   onChange={handleChange}
+                  min="0"
+                  step="0.1"
+                  required
                 />
               </div>
 
@@ -242,148 +264,181 @@ export default function PersonalisedInsightsFormComponent() {
                   placeholder="e.g. 300"
                   value={formData.monthly_fuel_spend}
                   onChange={handleChange}
+                  min="0"
+                  step="0.01"
+                  required
                 />
               </div>
 
-              <div className="form-section">
-                <label className="form-label required">Is Home Charging Accessible</label>
-                <select
-                  name="home_charging"
-                  value={formData.home_charging}
-                  onChange={handleChange}
-                >
-                  <option value="">Select option</option>
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                  <option value="Not sure">Not sure</option>
-                </select>
-              </div>
+            <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+              <label htmlFor="insights-home_charging" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Is Home Charging Accessible <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>
+              <select
+                id="insights-home_charging"
+                className="w-full min-w-0 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-950 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 transition-colors hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-white dark:hover:bg-gray-900 focus:border-emerald-500 dark:focus:border-emerald-700 focus:bg-white dark:focus:bg-gray-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+                name="home_charging"
+                value={formData.home_charging}
+                onChange={handleChange}
+              >
+                <option value="">Select option</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+                <option value="Not sure">Not sure</option>
+              </select>
+            </div>
 
-              <div className="form-section">
-                <label className="form-label required">Does Your Home Have Solar Panels</label>
-                <select
-                  name="solar_panels"
-                  value={formData.solar_panels}
-                  onChange={handleChange}
-                >
-                  <option value="">Select option</option>
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-              </div>
+            <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+              <label htmlFor="insights-solar_panels" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Does Your Home Have Solar Panels <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>
+              <select
+                id="insights-solar_panels"
+                className="w-full min-w-0 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-950 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 transition-colors hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-white dark:hover:bg-gray-900 focus:border-emerald-500 dark:focus:border-emerald-700 focus:bg-white dark:focus:bg-gray-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+                name="solar_panels"
+                value={formData.solar_panels}
+                onChange={handleChange}
+              >
+                <option value="">Select option</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
 
-              <div className="form-section">
-                <label className="form-label required">Charging Location Preference</label>
-                <select
-                  name="charging_preference"
-                  value={formData.charging_preference}
-                  onChange={handleChange}
-                >
-                  <option value="">Select preference</option>
-                  <option value="Home">Home</option>
-                  <option value="Work">Work</option>
-                  <option value="Public stations">Public charging</option>
-                  <option value="No Preference">No Preference</option>
-                </select>
-              </div>
+            <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
+              <label htmlFor="insights-charging_preference" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Charging Location Preference <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>
+              <select
+                id="insights-charging_preference"
+                className="w-full min-w-0 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-950 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 transition-colors hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-white dark:hover:bg-gray-900 focus:border-emerald-500 dark:focus:border-emerald-700 focus:bg-white dark:focus:bg-gray-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
+                name="charging_preference"
+                value={formData.charging_preference}
+                onChange={handleChange}
+              >
+                <option value="">Select preference</option>
+                <option value="Home">Home</option>
+                <option value="Work">Work</option>
+                <option value="Public stations">Public charging</option>
+                <option value="No Preference">No Preference</option>
+              </select>
+            </div>
 
-              <h3 className="insights-section-title">EV Preference</h3>
+          </section>
+        </div>
 
-              <div className="form-section">
-                <label className="form-label required">Budget</label>
-                <select
-                  name="budget"
-                  value={formData.budget}
-                  onChange={handleChange}
-                >
-                  <option value="">Select budget</option>
-                  <option value="<$40,000">Under $40k</option>
-                  <option value="$40,000-$60,000">$40k - $60k</option>
-                  <option value="$60,000-$80,000">$60k - $80k</option>
-                  <option value=">$80,000">Over 80k$</option>
-                  <option value="Not sure/ Just exploring">Not sure / Just exploring</option>
-                </select>
-              </div>
+        <section className="mt-6 space-y-4 border-t border-slate-200 dark:border-gray-800 pt-6" aria-label="EV Preference">
+          <h2 className="mb-5 flex items-center gap-3 text-xl font-bold text-slate-900 dark:text-white"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400"><Leaf className="h-5 w-5" aria-hidden="true" /></span>EV Preference</h2>
 
-              <div className="form-section">
-                <label className="form-label required">Priorities</label>
-                <div className="checkbox, input-and-label-same-line">
-                  <input 
-                    name="affordability"
-                    type="checkbox"
-                    id="priorities1"
-                    value="Affordability"
-                    checked={inputs.affordability}
-                    onChange={handleCheckChange} />
-                  <label for="priorities1">Affordability</label>
-                  <input 
-                    name="driving_range" 
-                    type="checkbox" 
-                    id="priorities2" 
-                    value="Driving range" 
-                    checked={inputs.driving_range} 
-                    onChange={handleCheckChange} />
-                  <label for="priorities2">Driving range</label>
-                  <input 
-                    name="environmental_impact" 
-                    type="checkbox" 
-                    id="priorities3" 
-                    value="Environmental impact" 
-                    checked={inputs.environmental_impact} 
-                    onChange={handleCheckChange} />
-                  <label for="priorities3">Environmental Impact</label>
-                  <input 
-                    name="charging_convenience" 
-                    type="checkbox" id="priorities4" 
-                    value="Charging convenience" 
-                    checked={inputs.charging_convenience} 
-                    onChange={handleCheckChange} />
-                  <label for="priorities4">Charging Convenience</label>
-                  <input
-                    name="tech_features" 
-                    type="checkbox"
-                    id="priorities5"
-                    value="Tech features" 
-                    checked={inputs.tech_features} 
-                    onChange={handleCheckChange} />
-                  <label for="priorities5">Tech Features</label>
-                  <input 
-                    name="brand_design" 
-                    type="checkbox" 
-                    id="priorities6" 
-                    value="Brand/ design" 
-                    checked={inputs.brand_design} 
-                    onChange={handleCheckChange} />
-                  <label for="priorities6">Brand/Design</label>
-                </div>
-              </div>
+          <div className="grid items-center gap-2 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-4">
+            <label htmlFor="insights-budget" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Budget <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>
+            <select
+              id="insights-budget"
+              className="w-full min-w-0 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-950 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 transition-colors hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-white dark:hover:bg-gray-900 focus:border-emerald-500 dark:focus:border-emerald-700 focus:bg-white dark:focus:bg-gray-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 sm:max-w-sm"
+              name="budget"
+              value={formData.budget}
+              onChange={handleChange}
+            >
+              <option value="">Select budget</option>
+              <option value="<$40,000">Under $40k</option>
+              <option value="$40,000-$60,000">$40k - $60k</option>
+              <option value="$60,000-$80,000">$60k - $80k</option>
+              <option value=">$80,000">Over 80k$</option>
+              <option value="Not sure/ Just exploring">Not sure / Just exploring</option>
+            </select>
+          </div>
 
-              <div className="form-section">
-                <label className="form-label required">Postcode</label>
+          <div className="grid items-center gap-2 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-4">
+            <span id="insights-priorities-label" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Priorities <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></span>
+            <div role="group" aria-labelledby="insights-priorities-label" className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              <label htmlFor="priorities1" className={`flex min-h-16 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 text-sm text-slate-700 transition-colors focus-within:ring-4 focus-within:ring-emerald-500/10 ${inputs.affordability ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-900/60 dark:text-emerald-400" : "border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-slate-50 dark:hover:bg-gray-900 dark:text-gray-300"}`}>
                 <input
-                  type="text"
-                  name="postcode"
-                  placeholder="Enter postcode"
-                  value={formData.postcode}
-                  onChange={handleChange}
-                />
-              </div>
+                  className="h-4 w-4 shrink-0 accent-emerald-600 dark:accent-emerald-500"
+                  name="affordability"
+                  type="checkbox"
+                  id="priorities1"
+                  value="Affordability"
+                  checked={inputs.affordability}
+                  onChange={handleCheckChange} />
+                <span>Affordability</span>
+              </label>
+              <label htmlFor="priorities2" className={`flex min-h-16 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 text-sm text-slate-700 transition-colors focus-within:ring-4 focus-within:ring-emerald-500/10 ${inputs.driving_range ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-900/60 dark:text-emerald-400" : "border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-slate-50 dark:hover:bg-gray-900 dark:text-gray-300"}`}>
+                <input
+                  className="h-4 w-4 shrink-0 accent-emerald-600 dark:accent-emerald-500"
+                  name="driving_range"
+                  type="checkbox"
+                  id="priorities2"
+                  value="Driving range"
+                  checked={inputs.driving_range}
+                  onChange={handleCheckChange} />
+                <span>Driving range</span>
+              </label>
+              <label htmlFor="priorities3" className={`flex min-h-16 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 text-sm text-slate-700 transition-colors focus-within:ring-4 focus-within:ring-emerald-500/10 ${inputs.environmental_impact ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-900/60 dark:text-emerald-400" : "border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-slate-50 dark:hover:bg-gray-900 dark:text-gray-300"}`}>
+                <input
+                  className="h-4 w-4 shrink-0 accent-emerald-600 dark:accent-emerald-500"
+                  name="environmental_impact"
+                  type="checkbox"
+                  id="priorities3"
+                  value="Environmental impact"
+                  checked={inputs.environmental_impact}
+                  onChange={handleCheckChange} />
+                <span>Environmental Impact</span>
+              </label>
+              <label htmlFor="priorities4" className={`flex min-h-16 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 text-sm text-slate-700 transition-colors focus-within:ring-4 focus-within:ring-emerald-500/10 ${inputs.charging_convenience ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-900/60 dark:text-emerald-400" : "border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-slate-50 dark:hover:bg-gray-900 dark:text-gray-300"}`}>
+                <input
+                  className="h-4 w-4 shrink-0 accent-emerald-600 dark:accent-emerald-500"
+                  name="charging_convenience"
+                  type="checkbox" id="priorities4"
+                  value="Charging convenience"
+                  checked={inputs.charging_convenience}
+                  onChange={handleCheckChange} />
+                <span>Charging Convenience</span>
+              </label>
+              <label htmlFor="priorities5" className={`flex min-h-16 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 text-sm text-slate-700 transition-colors focus-within:ring-4 focus-within:ring-emerald-500/10 ${inputs.tech_features ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-900/60 dark:text-emerald-400" : "border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-slate-50 dark:hover:bg-gray-900 dark:text-gray-300"}`}>
+                <input
+                  className="h-4 w-4 shrink-0 accent-emerald-600 dark:accent-emerald-500"
+                  name="tech_features"
+                  type="checkbox"
+                  id="priorities5"
+                  value="Tech features"
+                  checked={inputs.tech_features}
+                  onChange={handleCheckChange} />
+                <span>Tech Features</span>
+              </label>
+              <label htmlFor="priorities6" className={`flex min-h-16 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 text-sm text-slate-700 transition-colors focus-within:ring-4 focus-within:ring-emerald-500/10 ${inputs.brand_design ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-900/60 dark:text-emerald-400" : "border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-slate-50 dark:hover:bg-gray-900 dark:text-gray-300"}`}>
+                <input
+                  className="h-4 w-4 shrink-0 accent-emerald-600 dark:accent-emerald-500"
+                  name="brand_design"
+                  type="checkbox"
+                  id="priorities6"
+                  value="Brand/ design"
+                  checked={inputs.brand_design}
+                  onChange={handleCheckChange} />
+                <span>Brand/Design</span>
+              </label>
             </div>
           </div>
 
-          <div className="insights-button-wrap">
-            {!submitted ?
-              <button type="submit" className="insights-submit-btn" disabled={loading}>
-                {loading ? "Submitting..." : "Submit"}
-              </button>
-            :
-              <button className="insights-submit-btn" onClick={() => navigate('/insights')}>View EV Insights</button>
-            }
+          <div className="grid items-center gap-2 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-4">
+            <label htmlFor="insights-postcode" className="text-sm font-semibold text-slate-700 dark:text-gray-200">Postcode <span aria-hidden="true" className="text-red-500 dark:text-red-400">*</span></label>
+            <input
+              type="text"
+              id="insights-postcode"
+              className="w-full min-w-0 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-950 px-3 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-600 transition-colors hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-white dark:hover:bg-gray-900 focus:border-emerald-500 dark:focus:border-emerald-700 focus:bg-white dark:focus:bg-gray-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 sm:max-w-sm"
+              name="postcode"
+              placeholder="Enter postcode"
+              value={formData.postcode}
+              onChange={handleChange}
+            />
           </div>
+        </section>
 
-          {message && <p className="insights-message">{message}</p>}
-        </form>
-      </div>
-    </div>
+        <div className="mt-6 flex justify-end">
+          {!submitted ?
+            <button type="submit" className="w-full rounded-lg bg-emerald-600 px-8 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-44" disabled={loading}>
+              {loading ? "Submitting..." : "Submit"}
+            </button>
+            :
+            <button className="w-full rounded-lg bg-emerald-600 px-8 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-44" onClick={() => navigate('/insights')}>View EV Insights</button>
+          }
+        </div>
+
+        {message && <p role="status" className={`mt-4 rounded-lg border px-4 py-3 text-sm ${message === "Form submitted successfully." ? "border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400" : "border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400"}`}>{message}</p>}
+      </form>
+    </main>
   );
 }

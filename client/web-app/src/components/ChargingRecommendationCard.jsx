@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 function ChargingRecommendationCard({ station, onSelect }) {
-    const [showReasons, setShowReasons] = useState(false);
+  const [showReasons, setShowReasons] = useState(false);
   return (
     <div className="recommendation-card">
       <h3>
