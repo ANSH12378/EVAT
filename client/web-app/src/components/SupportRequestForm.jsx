@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-
-import { Mail, User } from "lucide-react";
-import ErrorMessage from "../components/ErrorMessage";
-import SuccessMessage from "../components/SuccessMessage";
+import DOMPurify from "dompurify";
+import { toast } from "react-toastify";
+import { Mail, User } from 'lucide-react';
+import ErrorMessage from '../components/ErrorMessage'
+import SuccessMessage from '../components/SuccessMessage'
+import { submitSupportRequest } from "../services/supportRequestService";
 
 const API_URL = import.meta.env.VITE_API_URL;
 const SUPPORT_ENDPOINT = `${API_URL}/support-requests`;
@@ -97,6 +99,9 @@ export default function SupportRequestForm() {
 
     if (submitting) return;
 
+    //const sanitizedDescription = DOMPurify.sanitize(description);
+    //console.log(`Input: ${description}, Sanitised: ${sanitizedDescription}`)
+
     const userId = getUserId();
 
     if (!userId) {
@@ -107,50 +112,18 @@ export default function SupportRequestForm() {
     setSubmitting(true);
 
     try {
-      const res = await fetch(SUPPORT_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": String(userId),
-        },
-        body: JSON.stringify({
-          name: name,
-          email: email,
-          issue: issue,
-          description: description,
-        }),
+      const data = await submitSupportRequest({
+        name: name,
+        email: email,
+        issue: issue,
+        description: description,
+        userId: userId,
       });
-
-      let data;
-
-      try {
-        data = await res.json();
-      } catch {
-        data = {};
-      }
-
-      if (!res.ok) {
-        throw new Error(
-          data?.message ||
-            data?.error ||
-            `Submit failed (${res.status})`
-        );
-      }
-
-      const prev = JSON.parse(
-        localStorage.getItem("supportRequests") || "[]"
-      );
-
-      localStorage.setItem(
-        "supportRequests",
-        JSON.stringify([...prev, data])
-      );
-
-      setSuccess(
-        `Support request submitted! ${
-          data.reference ? `Reference: ${data.reference}` : ""
-        }`
-      );
+      console.log(data);
+      
+      // Save locally (optional quick UX)
+      const prev = JSON.parse(localStorage.getItem("supportRequests") || "[]");
+      localStorage.setItem("supportRequests", JSON.stringify([...prev, data]));
 
       setRecentSuccess(true);
 
@@ -159,7 +132,9 @@ export default function SupportRequestForm() {
       setIssue("");
       setDescription("");
     } catch (err) {
-      setError("Unable to submit");
+      setError('Unable to submit');
+      console.error("Error submitting support request:", err)
+      setError(err.message || 'Failed to submit support request. Please try again.');
     } finally {
       setSubmitting(false);
     }

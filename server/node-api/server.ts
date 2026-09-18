@@ -101,7 +101,6 @@ app.use(
   swaggerUi.setup(swaggerSpec, { explorer: true })
 );
 
-
 app.get("/api-docs/json", (req, res) => {
   res.json(swaggerSpec);
 });

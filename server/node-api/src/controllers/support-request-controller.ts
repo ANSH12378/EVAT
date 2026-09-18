@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import SupportRequest from "../models/support-request-model";
+import DOMPurify from "dompurify";
+import { JSDOM } from "jsdom";
 
 // POST /api/support-requests
 export async function createSupportRequest(req: Request, res: Response) {
@@ -10,7 +12,16 @@ export async function createSupportRequest(req: Request, res: Response) {
     }
 
     const { name, email, issue, description } = req.body || {};
-    if (!issue || !description) {
+
+    const window = new JSDOM('').window;
+    const purify = DOMPurify(window);
+
+    const sanitizedDescription = purify.sanitize(description);
+    if (sanitizedDescription.trim() === "") {
+        throw new Error("Cannot submit feedback with potentially malicious Javascript/HTML.");
+    }
+
+    if (!issue || !sanitizedDescription) {
       return res.status(400).json({ message: "issue and description are required" });
     }
 
@@ -27,7 +38,7 @@ export async function createSupportRequest(req: Request, res: Response) {
       name,
       email: email?.toLowerCase(),
       issue,
-      description,
+      description: sanitizedDescription,
       requestNo: nextNo,
       reference: `SR-${nextNo}`,
     });
