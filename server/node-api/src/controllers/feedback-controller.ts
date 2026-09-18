@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import he from "he";
 import FeedbackService from "../services/feedback-service";
 import { FeedbackResponse } from "../dtos/feedback-response";
+import DOMPurify from "dompurify";
+import { JSDOM } from "jsdom";
 
 export default class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
@@ -16,10 +18,19 @@ export default class FeedbackController {
   async submitFeedback(req: Request, res: Response): Promise<Response> {
     const { name, email, suggestion } = req.body;
 
+    const window = new JSDOM('').window;
+    const purify = DOMPurify(window);
+
+    const sanitizedSuggestion = purify.sanitize(suggestion);
+
     try {
       const safeName = name ? he.encode(String(name)) : "";
       const safeEmail = email ? he.encode(String(email)) : "";
       const safeSuggestion = suggestion ? he.encode(String(suggestion)) : "";
+
+      if (sanitizedSuggestion.trim() === "") {
+          throw new Error("Cannot submit feedback with potentially malicious Javascript/HTML.");
+      }
 
       const feedback = await this.feedbackService.createFeedback(safeName, safeEmail, safeSuggestion);
       return res

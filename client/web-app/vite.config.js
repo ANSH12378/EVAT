@@ -6,7 +6,18 @@ import { expand } from 'dotenv-expand';
 import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
-export default defineConfig(() => {
+export default defineConfig(({command}) => {
+  let scriptSrcPolicy = "'self'";
+  let styleSrcPolicy = "'self'";
+  let connectSrcPolicy = "'self'";
+
+  if (command === "serve") {
+    scriptSrcPolicy = "'self' 'unsafe-inline' https://maps.googleapis.com";
+    styleSrcPolicy = "'self' 'unsafe-inline' https://unpkg.com";
+    connectSrcPolicy = "'self' ws://localhost:3000 ws://127.0.0.1:3000 http://localhost:3000 http://localhost:8080 https://maps.googleapis.com";
+  }
+
+
   const env = {
     parsed: {
       // Load root .env
@@ -28,6 +39,8 @@ export default defineConfig(() => {
       processEnv[`import.meta.env.${key}`] = JSON.stringify(env.parsed[key]);
     }
   }
+
+  
   
   return {
     define: processEnv,
@@ -38,6 +51,19 @@ export default defineConfig(() => {
       },
     },
     root: process.cwd(),
-    server: { port: 3000 },
+    server: {
+      port: 3000,
+      headers: {
+        "Content-Security-Policy": [
+          "default-src 'self';",
+          `script-src ${scriptSrcPolicy};`,
+          `script-src-elem ${scriptSrcPolicy};`,
+          `style-src ${styleSrcPolicy};`,
+          `connect-src ${connectSrcPolicy};`,
+          "img-src 'self' blob: https: data:;",
+          "worker-src 'self' blob:;"
+        ].join(' ')
+      },
+    },
   };
 })

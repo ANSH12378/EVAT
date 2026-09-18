@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, User, Loader2 } from 'lucide-react';
+import DOMPurify from 'dompurify';
+import { Mail, User, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { submitFeedback } from '../services/feedbackService';
 import ErrorMessage from '../components/ErrorMessage';
 import SuccessMessage from '../components/SuccessMessage';
@@ -73,6 +74,7 @@ function FeedbackForm() {
     setSuccess('');
 
     try {
+      console.log(name + email + suggestion);
       const response = await submitFeedback({
         name: name,
         email: email,
