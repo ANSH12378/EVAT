@@ -96,7 +96,7 @@ const SentimentBadge = ({ label }) => {
 };
 
 export default function ReliabilityScoring() {
-  const { user } = userContext(UserContext);
+  const { user } = useContext(UserContext);
 
   const [health, setHealth] = useState(null);
   const [suburbs, setSuburbs] = useState([]);

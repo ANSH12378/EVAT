@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import BarChart from "./BarChart";
 import { getMyInsights } from "../services/personalisedEvInsightsService";
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from "../context/user";
 import { Button } from './Button';
-import { UserRound, ChartNoAxesColumn, TrendingUp } from 'lucide-react';
+import { UserRound, ChartNoAxesColumn, TrendingUp, User } from 'lucide-react';
 
 
 function Savings({estimatedSave, savingsMessage}) {
@@ -67,7 +67,7 @@ function SuitabilitySummary({ data }) {
 
 export default function InsightsDisplay() {
     const navigate = useNavigate();
-
+    const { user } = useContext(UserContext);
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
