@@ -11,10 +11,14 @@ export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Restore safe UI data immediately for a fast render
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
-      try { setUser(JSON.parse(storedUser)); } catch (e) { }
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Failed to parse stored currentUser', e);
+        localStorage.removeItem('currentUser'); // remove corrupted entry
+      }
     }
 
     // Silently verify the secure cookie in the background

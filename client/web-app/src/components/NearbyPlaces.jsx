@@ -1,11 +1,8 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { MapPin, Store, ExternalLink } from "lucide-react";
 import { UserContext } from "../context/user";
-import {
-  getNearbyPlaces,
-  getPlacesForStation,
-  fetchPlacePhotoObjectUrl,
-} from "../services/nearbyPlaceService";
+import { useNearbyPlaces } from "../context/NearbyPlacesContext";
+import { fetchPlacePhotoObjectUrl } from "../services/nearbyPlaceService";
 
 const CATEGORIES = [
   { id: "all", label: "All" },
@@ -18,20 +15,23 @@ const CATEGORY_EMOJI = {
   shopping: "🛍️",
 };
 
+/** Eagerly allow photos for the first N cards; the rest wait until scrolled into view. */
+const EAGER_PHOTO_COUNT = 3;
+
 function formatDistance(place) {
   if (place.distanceMeters == null) return "Nearby";
   if (place.distanceMeters < 1000) return `${place.distanceMeters} m`;
   return `${(place.distanceMeters / 1000).toFixed(1)} km`;
 }
 
-function PlacePhoto({ place}) {
+function PlacePhoto({ place, enabled }) {
   const [src, setSrc] = useState(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (!place.photoName) {
+    if (!enabled || !place.photoName) {
       setSrc(null);
-      setFailed(true);
+      setFailed(!place.photoName);
       return undefined;
     }
 
@@ -61,7 +61,7 @@ function PlacePhoto({ place}) {
       abortController.abort();
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [place.photoName]);
+  }, [place.photoName, enabled]);
 
   if (!src || failed) {
     return (
@@ -82,76 +82,107 @@ function PlacePhoto({ place}) {
   );
 }
 
-export default function NearbyPlaces({ station }) {
-  const { user } = useContext(UserContext);
-  const [places, setPlaces] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [category, setCategory] = useState("all");
-  const [expanded, setExpanded] = useState(true);
+function PlaceCard({ place, eager }) {
+  const cardRef = useRef(null);
+  const [visible, setVisible] = useState(Boolean(eager));
 
   useEffect(() => {
-    if (!station) {
-      setPlaces([]);
+    if (eager || visible) return undefined;
+    const node = cardRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setVisible(true);
       return undefined;
     }
 
-    const abortController = new AbortController();
-    let cancelled = false;
-
-    const loadPlaces = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const options = { category, signal: abortController.signal };
-        let response;
-
-        if (station._id) {
-          response = await getPlacesForStation(station._id, options);
-        } else {
-          const latitude = Number(station.latitude ?? station.location?.coordinates?.[1]);
-          const longitude = Number(station.longitude ?? station.location?.coordinates?.[0]);
-          if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
-            throw new Error("This station has no location data.");
-          }
-          response = await getNearbyPlaces(latitude, longitude, options);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setVisible(true);
+          observer.disconnect();
         }
-
-        if (cancelled) return;
-        setPlaces(response.data?.places || []);
-      } catch (err) {
-        if (cancelled || err?.name === "AbortError") return;
-        setPlaces([]);
-        setError(err.message || "Unable to load nearby places.");
-      } finally {
-        if (!cancelled) setLoading(false);
+      },
+      {
+        root: null,
+        rootMargin: "120px 0px",
+        threshold: 0.01,
       }
-    };
+    );
 
-    loadPlaces();
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [eager, visible]);
 
-    return () => {
-      cancelled = true;
-      abortController.abort();
-    };
-  }, [station, category]);
+  return (
+    <div ref={cardRef} className="promo-card">
+      <PlacePhoto place={place} enabled={visible} />
+      <div className="promo-card-header">
+        <span className="promo-emoji">
+          {CATEGORY_EMOJI[place.category] || "📍"}
+        </span>
+        <div className="promo-card-copy">
+          <div className="promo-business">{place.typeLabel}</div>
+          <div className="promo-title">{place.name}</div>
+        </div>
+        {place.rating != null && (
+          <span className="promo-discount">{place.rating.toFixed(1)} ★</span>
+        )}
+      </div>
+
+      {place.address && (
+        <p className="text-small promo-description">{place.address}</p>
+      )}
+
+      <div className="promo-meta">
+        <span className="text-tiny promo-distance">
+          <MapPin size={12} />
+          {formatDistance(place)}
+          {place.walkingMinutes ? ` · ${place.walkingMinutes} min walk` : ""}
+          {place.isOpen === true ? " · Open" : ""}
+          {place.isOpen === false ? " · Closed" : ""}
+        </span>
+        {place.directionsUrl && (
+          <a
+            className="promo-code-btn"
+            href={place.directionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <ExternalLink size={12} />
+            Directions
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function NearbyPlaces() {
+  const { user } = useContext(UserContext);
+  const { places, loading, error, category, setCategory } = useNearbyPlaces();
+  const [expanded, setExpanded] = useState(true);
 
   return (
     <div>
-      <div className="sidebar-linebreak" />
-      <button
-        type="button"
-        className="promo-section-toggle"
-        onClick={() => setExpanded((open) => !open)}
-      >
-        <span className="promo-section-title">
+      <div className="flex justify-between items-center">
+        <h6 class="font-bold flex items-center gap-x-2">
           <Store size={16} />
           Nearby Food & Stores
-        </span>
-        <span className="text-tiny">
-          {expanded ? "Hide" : `${places.length || ""} Show`}
-        </span>
-      </button>
+        </h6>
+        
+        <button
+          className="
+            flex items-center justify-center size-6
+            rounded-md
+            cursor-pointer
+            outline-1 outline-primary/25
+            hover:bg-primary/25
+          "
+          onClick={() => setExpanded(!expanded)}
+          aria-label={open ? "Expand nearby places" : "Minimize nearby places"}
+        >
+          {expanded ? "-" : "+"}
+        </button>
+      </div>
 
       {expanded && (
         <>
@@ -181,47 +212,12 @@ export default function NearbyPlaces({ station }) {
           )}
 
           {!loading &&
-            places.map((place) => (
-              <div key={place.id} className="promo-card">
-                <PlacePhoto place={place} token={token} />
-                <div className="promo-card-header">
-                  <span className="promo-emoji">
-                    {CATEGORY_EMOJI[place.category] || "📍"}
-                  </span>
-                  <div className="promo-card-copy">
-                    <div className="promo-business">{place.typeLabel}</div>
-                    <div className="promo-title">{place.name}</div>
-                  </div>
-                  {place.rating != null && (
-                    <span className="promo-discount">{place.rating.toFixed(1)} ★</span>
-                  )}
-                </div>
-
-                {place.address && (
-                  <p className="text-small promo-description">{place.address}</p>
-                )}
-
-                <div className="promo-meta">
-                  <span className="text-tiny promo-distance">
-                    <MapPin size={12} />
-                    {formatDistance(place)}
-                    {place.walkingMinutes ? ` · ${place.walkingMinutes} min walk` : ""}
-                    {place.isOpen === true ? " · Open" : ""}
-                    {place.isOpen === false ? " · Closed" : ""}
-                  </span>
-                  {place.directionsUrl && (
-                    <a
-                      className="promo-code-btn"
-                      href={place.directionsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <ExternalLink size={12} />
-                      Directions
-                    </a>
-                  )}
-                </div>
-              </div>
+            places.map((place, index) => (
+              <PlaceCard
+                key={place.id}
+                place={place}
+                eager={index < EAGER_PHOTO_COUNT}
+              />
             ))}
         </>
       )}
