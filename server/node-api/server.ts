@@ -1,4 +1,4 @@
- import express, { Application } from "express";
+import express, { Application } from "express";
 import mongoose from 'mongoose';
 import swaggerUi from "swagger-ui-express";
 import swaggerJSDoc from "swagger-jsdoc";
@@ -76,17 +76,16 @@ const options = {
     },
     components: {
       securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
-          in: "header",
+        cookieAuth: {
+          type: "apiKey",
+          in: "cookie",
+          name: "accessToken"
         },
       },
     },
     security: [
       {
-        bearerAuth: [],
+        cookieAuth: [],
       },
     ],
     // PUBLIC_API_URL wins when set (Docker publishes the API on a different

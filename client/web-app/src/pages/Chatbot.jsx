@@ -476,11 +476,7 @@ function Chips({ options, onSelect }) {
 
 /** The signed-in account's id, falling back to the saved login while the context loads. */
 const chatOwner = (user) => {
-  let account = user;
-  if (!account) {
-    try { account = JSON.parse(localStorage.getItem("currentUser") || "null"); } catch { account = null; }
-  }
-  return account?.id || account?._id || account?.email || "guest";
+  return user?.id || user?._id || user?.email || "guest";
 };
 
 /**

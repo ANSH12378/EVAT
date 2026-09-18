@@ -180,10 +180,10 @@ const MapPage = () => {
       //Alternative endpoint for chargers
       // const response = await fetch(url2, {
       //   method: 'POST',
+      //   credentials: 'include',
       //   body: JSON.stringify(data),
       //   headers: {
       //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${user.token.accessToken}`
       //   }
       // });
       const params = new URLSearchParams(data);
@@ -193,7 +193,6 @@ const MapPage = () => {
         credentials: "include",
         headers: { 'Content-Type': 'application/json', }
       });
-      console.log(`Bearer ${user.token.accessToken}`);
       const result = await response.json();
       if (response.ok) {
         Alert.alert("🔋 Charging Stations", `Found ${result.count} chargers`, [{ text: 'Ok', }]);

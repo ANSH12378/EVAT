@@ -498,11 +498,11 @@ export default function EnvironmentalImpact({
 
   useEffect(() => {
     (async () => {
-      if (!user?.token) return;
+      if (!user) return;
 
       fetch(`${API_URL}/ice-vehicle`, {
         headers: {
-          Authorization: `Bearer ${user.token}`,
+          credentials: "include",
         },
       })
         .then((res) => {
@@ -526,7 +526,7 @@ export default function EnvironmentalImpact({
           setError(err.message)
         );
     })();
-  }, [user?.token]);
+  }, [user]);
 
   const options = (
     vehicles,
@@ -669,10 +669,10 @@ export default function EnvironmentalImpact({
           `${API_URL}/env-impact-analysis/compare`,
           {
             method: "POST",
+            credentials: "include",
             headers: {
               "Content-Type":
                 "application/json",
-              Authorization: `Bearer ${user.token}`,
             },
             body: JSON.stringify({
               evVehicleId: ev.id,
@@ -697,7 +697,7 @@ export default function EnvironmentalImpact({
     };
 
     compare();
-  }, [ev, ice, user?.token]);
+  }, [ev, ice, user]);
 
   return (
     <div

@@ -79,19 +79,6 @@ const ProfileAvatarTool = ({
     }
   };
 
-  const getToken = () => {
-    const token =
-      contextUser?.token ||
-      JSON.parse(localStorage.getItem("currentUser") || "null")?.token;
-
-    if (!token) {
-      setError("You are not logged in. Please sign in again.");
-      return null;
-    }
-
-    return token;
-  };
-
   const isValidUrl = (url) => {
     if (!url || !url.trim()) {
       return {
@@ -206,9 +193,8 @@ const ProfileAvatarTool = ({
       return;
     }
 
-    const token = getToken();
 
-    if (!token) return;
+    if (!user) return;
 
     setUploading(true);
     setError("");
@@ -270,10 +256,6 @@ const ProfileAvatarTool = ({
 
   const handleSave = async () => {
     if (!selectedAvatar) return;
-
-    const token = getToken();
-
-    if (!token) return;
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/profile/avatar`, {
