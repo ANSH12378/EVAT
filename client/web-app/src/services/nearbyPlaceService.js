@@ -46,7 +46,7 @@ export const getNearbyPlaces = async (latitude, longitude, options = {}) => {
 
 export const fetchPlacePhotoObjectUrl = async (photoName, options = {}) => {
   if (!photoName) return null;
-  const { token, signal } = options;
+  const { signal } = options;
   const response = await fetch(`${baseUrl}/photo?name=${encodeURIComponent(photoName)}`, {
     method: "GET",
     credentials: "include",

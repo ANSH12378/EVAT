@@ -60,7 +60,7 @@ export default function ChargerSideBar({ station, onClose }) {
       const [reviewsResponse, statsResponse, congestionResponse] = await Promise.all([
         getChargerReviews(station._id),
         getChargerReviewStats(station._id),
-        getChargerCongestion(station._id),
+        getChargerCongestion([station._id]),
       ]);
 
       // Change the username value

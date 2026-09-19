@@ -96,7 +96,6 @@ export const getChargerReviewStats = async (chargerId) => {
 /**
  * Check if user has reviewed a charger and get their review
  * @param {string} chargerId - The charger ID
- * @param {string} token - JWT token for authentication
  * @returns {Promise<Object>} - The response from the API
  */
 export const checkUserReviewStatus = async (chargerId) => {

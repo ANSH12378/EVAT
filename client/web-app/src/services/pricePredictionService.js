@@ -9,7 +9,7 @@ async function handleResponse(response) {
 }
 
 /** POST /api/predict/price → POST /predict */
-export const predictPrice = async (features, token, rowId) => {
+export const predictPrice = async (features, rowId) => {
   const response = await fetch(`${API_URL}/predict/price`, {
     method: "POST",
     credentials: "include",
@@ -20,7 +20,7 @@ export const predictPrice = async (features, token, rowId) => {
 };
 
 /** POST /api/predict/price/batch → POST /predict/batch */
-export const predictPriceBatch = async (records, token) => {
+export const predictPriceBatch = async (records) => {
   const response = await fetch(`${API_URL}/predict/price/batch`, {
     method: "POST",
     credentials: "include", 
@@ -31,7 +31,7 @@ export const predictPriceBatch = async (records, token) => {
 };
 
 /** GET /api/predict/price/schema → GET /schema */
-export const getPriceSchema = async (token) => {
+export const getPriceSchema = async () => {
   const response = await fetch(`${API_URL}/predict/price/schema`, {
     method: "GET",
     credentials: "include", 
@@ -40,7 +40,7 @@ export const getPriceSchema = async (token) => {
 };
 
 /** GET /api/predict/price/model/info → GET /model/info */
-export const getPriceModelInfo = async (token) => {
+export const getPriceModelInfo = async () => {
   const response = await fetch(`${API_URL}/predict/price/model/info`, {
     method: "GET",
     credentials: "include", 

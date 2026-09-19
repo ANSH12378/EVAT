@@ -342,7 +342,7 @@ export default function Map() {
       try {
         setErr('');
         setLoading(true);
-        const data = await getChargers(user);
+        const data = await getChargers();
         if (mounted) {
           setStations(Array.isArray(data) ? data : []);
           setLoading(false);
@@ -400,7 +400,7 @@ useEffect(() => {
 
     async function fetchConnectorTypes() {
       try {
-        const types = await getConnectorTypes(user);
+        const types = await getConnectorTypes();
         setConnectorTypes(types);
       } catch (err) {
         console.error("Failed to load connector types", err);
@@ -409,7 +409,7 @@ useEffect(() => {
 
     async function fetchOperatorTypes() {
       try {
-        const types = await getOperatorTypes(user);
+        const types = await getOperatorTypes();
         setOperatorTypes(types);
       } catch (err) {
         console.error("Failed to load operator types", err);

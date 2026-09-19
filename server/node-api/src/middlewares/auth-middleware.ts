@@ -25,7 +25,9 @@ export const authGuard = (allowedRoles: string[]) => {
       }
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
 
-      
+      if (decoded.type !== 'access'){
+        return res.status(401).json({ message: "Invalid token: must be an access token"});
+      }
 
       // ✅ Admin token path
       if (decoded.admin) {
@@ -40,9 +42,6 @@ export const authGuard = (allowedRoles: string[]) => {
         };
 
         return next();
-      }
-      if (decoded.type !== 'access'){
-        return res.status(401).json({ message: "Invalid token: must be an access token"});
       }
 
       // ✅ Regular user path

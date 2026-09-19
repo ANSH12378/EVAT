@@ -55,72 +55,27 @@ export default class UserController {
                 return res.status(401).json({ message: "No token provided" });
             }
 
-            try {
-                const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
-                if (decoded.type !== "access") throw new Error("Token is not an access token");
-                const user = await this.userService.getUserById(decoded.id);
-                if (!user) {
-                    return res.status(404).json({ message: "User not found" });
-                }
+            const decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
+            if (decoded.type !== "access") throw new Error("Token is not an access token");
+            const user = await this.userService.getUserById(decoded.id);
+            if (!user) {
+                return res.status(404).json({ message: "User not found" });
+            }
 
                 // Update last login
                 //user.lastLogin = new Date();
-                await user.save();
+            await user.save();
 
-                return res.status(200).json({
-                    message: "Automatic Login Successful",
-                    data: {
-                        user,
-                        accessToken: token, // same one, still valid
-                    },
-                });
-            } catch (err) {
-
-                const decoded = jwt.decode(token) as JwtPayload;
-                if (!decoded?.id) {
-                    return res.status(401).json({ message: "Invalid token" });
-                }
-
-                const user = await this.userService.getUserById(decoded.id);
-                if (!user || !user.refreshTokenExpiresAt) {
-                    return res.status(404).json({ message: "User or refresh token not found" });
-                }
-
-                const nowUnix = Math.floor(Date.now() / 1000);
-                const refreshTokenExpiryUnix = Math.floor(
-                    new Date(user.refreshTokenExpiresAt).getTime() / 1000
-                );
-
-                if (refreshTokenExpiryUnix > nowUnix) {
-                    // if still valid, make a new AccessToken
-                    const newAccessToken = generateAccessToken(user);
-
-                    // Update last login
-                    //user.lastLogin = new Date();
-                    await user.save();
-
-                    res.cookie('token', newAccessToken, {
-                      httpOnly: true,
-                      secure: process.env.NODE_ENV === 'production',
-                      sameSite: 'lax' // adjust to strict in deployment (localhost only work with lax)
-                    });
-
-                    // OK status with data and a new AccessToken
-                    return res.status(200).json({
-                        message: "Automatic Login Successful",
-                        data: {
-                            user: new UserItemResponse(user),
-                            accessToken: newAccessToken,
-                        },
-                    });
-
-                } else {
-                    return res.status(401).json({ message: "Refresh token expired, please log in again" });
-                }
-            }
+            return res.status(200).json({
+                message: "Automatic Login Successful",
+                data: {
+                    user: new UserItemResponse(user)
+                },
+            });
+            
         } catch (error: any) {
             console.error("jwtLogin error:", error);
-            return res.status(500).json({ message: "Internal server error", error: error.message });
+            return res.status(401).json({ message: "Invalid or expired token. Please refresh." });
         }
     }
 
@@ -161,7 +116,6 @@ export default class UserController {
         message: "Login successful",
         data: {
           user: new UserItemResponse(data.data),
-          accessToken: token,
         },
       });
     } catch (error: any) {
@@ -197,10 +151,16 @@ export default class UserController {
     try {
       const { accessToken, refreshToken: newRefreshToken } =
         await this.userService.refreshAccessToken(refreshToken);
+
+      res.cookie('token', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax' 
+      });
+
       return res.status(200).json({
         message: "Token refreshed successfully",
         data: {
-          accessToken,
           refreshToken: newRefreshToken,
         },
       });

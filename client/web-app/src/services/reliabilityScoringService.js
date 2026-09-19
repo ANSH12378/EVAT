@@ -25,7 +25,7 @@ export const getReliabilityHealth = async () => {
 };
 
 /** GET /api/reliability/suburbs */
-export const getReliabilitySuburbs = async (token) => {
+export const getReliabilitySuburbs = async () => {
   const response = await fetch(`${API_URL}/reliability/suburbs`, {
     method: "GET",
     credentials: "include", 
@@ -34,7 +34,7 @@ export const getReliabilitySuburbs = async (token) => {
 };
 
 /** GET /api/reliability/summary */
-export const getReliabilitySummary = async (token, params = {}) => {
+export const getReliabilitySummary = async (params = {}) => {
   const response = await fetch(
     `${API_URL}/reliability/summary${buildQuery(params)}`,
     {
@@ -46,7 +46,7 @@ export const getReliabilitySummary = async (token, params = {}) => {
 };
 
 /** GET /api/reliability/stations */
-export const getReliabilityStations = async (token, params = {}) => {
+export const getReliabilityStations = async ( params = {}) => {
   const response = await fetch(
     `${API_URL}/reliability/stations${buildQuery(params)}`,
     {
@@ -58,7 +58,7 @@ export const getReliabilityStations = async (token, params = {}) => {
 };
 
 /** GET /api/reliability/stations/:id */
-export const getReliabilityStation = async (token, chargerId) => {
+export const getReliabilityStation = async ( chargerId) => {
   const response = await fetch(
     `${API_URL}/reliability/stations/${encodeURIComponent(chargerId)}`,
     {
@@ -70,7 +70,7 @@ export const getReliabilityStation = async (token, chargerId) => {
 };
 
 /** GET /api/reliability/top */
-export const getReliabilityTop = async (token, params = {}) => {
+export const getReliabilityTop = async ( params = {}) => {
   const response = await fetch(
     `${API_URL}/reliability/top${buildQuery(params)}`,
     {
@@ -82,24 +82,22 @@ export const getReliabilityTop = async (token, params = {}) => {
 };
 
 /** POST /api/reliability/score */
-export const scoreReliabilityStation = async (token, payload) => {
+export const scoreReliabilityStation = async (payload) => {
   const response = await fetch(`${API_URL}/reliability/score`, {
     method: "POST",
     credentials: "include", 
     headers: { "Content-Type": "application/json" },
-    headers: authHeaders(token),
     body: JSON.stringify(payload),
   });
   return handleResponse(response);
 };
 
 /** POST /api/reliability/sentiment */
-export const analyzeReliabilitySentiment = async (token, text) => {
+export const analyzeReliabilitySentiment = async (text) => {
   const response = await fetch(`${API_URL}/reliability/sentiment`, {
     method: "POST",
     credentials: "include", 
     headers: { "Content-Type": "application/json" },
-    headers: authHeaders(token),
     body: JSON.stringify({ text }),
   });
   return handleResponse(response);

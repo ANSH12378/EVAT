@@ -21,6 +21,7 @@ export function FavouritesProvider({ children }) {
 
       try {
         const res = await fetch(`${API_URL}/profile/user-profile`, {
+          credentials: "include",
           headers: { "Content-Type": "application/json", },
         });
 

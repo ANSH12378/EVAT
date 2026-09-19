@@ -64,7 +64,7 @@ export default class UserService {
 
           // Save refresh token to database
           const refreshTokenExpiresAt = new Date(
-            Date.now() + 24 * 60 * 60 * 1000
+            Date.now() + 7 * 24 * 60 * 60 * 1000
           ); // 1 day from now
           await UserRepository.updateRefreshToken(
             existingUser.id,
@@ -136,7 +136,7 @@ export default class UserService {
       const newRefreshToken = generateRefreshToken(user);
 
       // Update refresh token in database
-      const refreshTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const refreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       await UserRepository.updateRefreshToken(
         user.id,
         newRefreshToken,
