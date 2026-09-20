@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 import weatherAwareRouting.weatherAwareRouting
 import personalisedEVInsights.personalisedEVInsights
 import demandForecasting.demandForecasting
+import congestionPrediction.model_api as congestion_prediction
 import costComparison.costComparison
 import costComparison.model_runner
 import pricePrediction.price_prediction_api
@@ -34,6 +35,9 @@ async def lifespan(app: FastAPI):
 
     print("[startup] Loading reliability scoring data...")
     reliability_scoring.initialize()
+
+    print("[startup] Loading congestion prediction model...")
+    await congestion_prediction.startup_event()
 
     print("[startup] Models ready.")
     yield
@@ -110,6 +114,13 @@ app.include_router(reliability_scoring.router, prefix="/reliability")
 @app.get("/")
 def root():
     return {"message": "API Running"}
+
+# =============================================================
+# Congestion Prediction Use Case
+app.include_router(
+    congestion_prediction.app.router,
+    prefix="/congestionPrediction"
+)
 
 # =============================================================
 # Weather Aware Routing Use Case

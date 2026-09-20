@@ -6,7 +6,7 @@ pydantic
 # Data science and saved-model loading
 numpy
 pandas
-scikit-learn
+scikit-learn==1.7.2
 joblib
 xgboost
 lightgbm
