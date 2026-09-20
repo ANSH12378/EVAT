@@ -3,7 +3,6 @@ import UserController from "../../src/controllers/user-controller";
 import UserService from "../../src/services/user-service";
 import { UserItemResponse } from "../../src/dtos/user-item-response";
 import jwt from "jsonwebtoken";
-import generateToken from "../../src/utils/generate-token";
 
 jest.mock("jsonwebtoken", () => ({
   __esModule: true,
@@ -12,12 +11,6 @@ jest.mock("jsonwebtoken", () => ({
     decode: jest.fn(),
   },
 }));
-jest.mock("../../src/utils/generate-token", () => ({
-    __esModule: true,
-    default: jest.fn()
-}));
-
-
 // Mock the UserService
 jest.mock("../../src/services/user-service");
 
@@ -38,6 +31,7 @@ describe("UserController", () => {
   let mockResponse: Partial<Response>;
   let jsonMock: jest.Mock;
   let statusMock: jest.Mock;
+  let cookieMock: jest.Mock;
 
   beforeEach(() => {
     // Reset mocks for each test
@@ -48,10 +42,12 @@ describe("UserController", () => {
     // Set up request and response mocks
     jsonMock = jest.fn().mockReturnThis();
     statusMock = jest.fn().mockReturnValue({ json: jsonMock });
+    cookieMock = jest.fn().mockReturnThis();
     mockRequest = {};
     mockResponse = {
       status: statusMock,
       json: jsonMock,
+      cookie: cookieMock,
     };
   });
 
@@ -155,13 +151,18 @@ describe("UserController", () => {
       expect(jsonMock).toHaveBeenCalledWith({
         message: "Login successful",
         data: {
-          user: mockUser,
-          accessToken: {
-            accessToken: "mock-access-token",
-            refreshToken: "mock-refresh-token"
-          }
+          user: mockUser
         }
       });
+      expect(cookieMock).toHaveBeenCalledWith('token', 'mock-access-token', expect.objectContaining({
+        httpOnly: true,
+        sameSite: 'lax',
+      }));
+      expect(cookieMock).toHaveBeenCalledWith('refreshToken', 'mock-refresh-token', expect.objectContaining({
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      }));
     });
 
     test("Case: Failure login with incorrect credentials", async () => {
@@ -193,7 +194,7 @@ describe("UserController", () => {
   describe("refreshToken", () => {
     test("Case: Successfully refreshes token", async () => {
       // Arrange
-      mockRequest.body = { refreshToken: "valid-refresh-token" };
+      mockRequest.cookies = { refreshToken: "valid-refresh-token" };
 
       const mockTokenResponse = {
         accessToken: "new-access-token",
@@ -208,17 +209,22 @@ describe("UserController", () => {
       expect(mockUserService.refreshAccessToken).toHaveBeenCalledWith("valid-refresh-token");
       expect(statusMock).toHaveBeenCalledWith(200);
       expect(jsonMock).toHaveBeenCalledWith({
-        message: "Token refreshed successfully",
-        data: {
-          accessToken: "new-access-token",
-          refreshToken: "new-refresh-token"
-        }
+        message: "Token refreshed successfully"
       });
+      expect(cookieMock).toHaveBeenCalledWith('token', 'new-access-token', expect.objectContaining({
+        httpOnly: true,
+        sameSite: 'lax',
+      }));
+      expect(cookieMock).toHaveBeenCalledWith('refreshToken', 'new-refresh-token', expect.objectContaining({
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      }));
     });
 
     test("Case: Missing refresh token", async () => {
       // Arrange
-      mockRequest.body = {};
+      mockRequest.cookies = {};
 
       // Act
       await userController.refreshToken(mockRequest as Request, mockResponse as Response);
@@ -233,7 +239,7 @@ describe("UserController", () => {
 
     test("Case: Invalid refresh token", async () => {
       // Arrange
-      mockRequest.body = { refreshToken: "invalid-refresh-token" };
+      mockRequest.cookies = { refreshToken: "invalid-refresh-token" };
 
       const errorMessage = "Invalid refresh token";
       mockUserService.refreshAccessToken = jest.fn().mockRejectedValue(new Error(errorMessage));
@@ -406,7 +412,7 @@ describe("UserController", () => {
         test("Case: Valid token, user found", async () => {
             // Arrange
             const mockUser = { id: "1", email: "test@example.com", save: jest.fn() };
-            (jwt.verify as jest.Mock).mockReturnValue({ id: "1" });
+            (jwt.verify as jest.Mock).mockReturnValue({ id: "1", type: "access" });
             mockUserService.getUserById = jest.fn().mockResolvedValue(mockUser);
             mockRequest.headers = { authorization: "Bearer validtoken" };
 
@@ -419,15 +425,14 @@ describe("UserController", () => {
             expect(jsonMock).toHaveBeenCalledWith({
                 message: "Automatic Login Successful",
                 data: {
-                    user: mockUser,
-                    accessToken: "validtoken"
+                    user: mockUser
                 }
             });
         });
 
         test("Case: Valid token but user not found", async () => {
             // Arrange
-            (jwt.verify as jest.Mock).mockReturnValue({ id: "2" });
+            (jwt.verify as jest.Mock).mockReturnValue({ id: "2", type: "access" });
             mockUserService.getUserById = jest.fn().mockResolvedValue(null);
             mockRequest.headers = { authorization: "Bearer othertoken" };
 
@@ -439,26 +444,23 @@ describe("UserController", () => {
             expect(jsonMock).toHaveBeenCalledWith({ message: "User not found" });
         });
 
-          test("Case: User lookup failure returns a server error", async () => {
-            (jwt.verify as jest.Mock).mockReturnValue({ id: "2" });
+          test("Case: User lookup failure returns an invalid-session response", async () => {
+            (jwt.verify as jest.Mock).mockReturnValue({ id: "2", type: "access" });
             mockUserService.getUserById = jest.fn().mockRejectedValue(new Error("Database unavailable"));
             mockRequest.headers = { authorization: "Bearer validtoken" };
 
             await userController.jwtLogin(mockRequest as Request, mockResponse as Response);
 
-            expect(statusMock).toHaveBeenCalledWith(500);
+            expect(statusMock).toHaveBeenCalledWith(401);
             expect(jsonMock).toHaveBeenCalledWith({
-              message: "Internal server error",
-              error: "Database unavailable",
+              message: "Invalid or expired token. Please refresh.",
             });
           });
 
-        test("Case: Expired access token but no refresh token submitted", async () => {
+        test("Case: Expired access token requires the separate refresh endpoint", async () => {
             // Arrange
             (jwt.verify as jest.Mock).mockImplementation(() => { throw new Error("TokenExpiredError"); });
-            (jwt.decode as jest.Mock).mockReturnValue({ id: "3" });
             mockRequest.headers = { authorization: "Bearer expiredtoken" };
-            mockRequest.body = {};
 
             // Act
             await userController.jwtLogin(mockRequest as Request, mockResponse as Response);
@@ -467,63 +469,13 @@ describe("UserController", () => {
             expect(mockUserService.refreshAccessToken).not.toHaveBeenCalled();
             expect(statusMock).toHaveBeenCalledWith(401);
             expect(jsonMock).toHaveBeenCalledWith({
-                message: "Refresh token is required to renew an expired session"
-            });
-        });
-
-        test("Case: Expired access token with a valid, verified refresh token", async () => {
-            // Arrange
-            (jwt.verify as jest.Mock).mockImplementation(() => { throw new Error("TokenExpiredError"); });
-            (jwt.decode as jest.Mock).mockReturnValue({ id: "3" });
-
-            const mockUser = { id: "3", save: jest.fn() };
-            mockUserService.refreshAccessToken = jest.fn().mockResolvedValue({
-                accessToken: "new-access-token",
-                refreshToken: "new-refresh-token"
-            });
-            mockUserService.getUserById = jest.fn().mockResolvedValue(mockUser);
-            mockRequest.headers = { authorization: "Bearer expiredtoken" };
-            mockRequest.body = { refreshToken: "valid-refresh-token" };
-
-            // Act
-            await userController.jwtLogin(mockRequest as Request, mockResponse as Response);
-
-            // Assert
-            expect(mockUserService.refreshAccessToken).toHaveBeenCalledWith("valid-refresh-token");
-            expect(statusMock).toHaveBeenCalledWith(200);
-            expect(jsonMock).toHaveBeenCalledWith({
-                message: "Automatic Login Successful",
-                data: {
-                    user: mockUser,
-                    accessToken: "new-access-token",
-                    refreshToken: "new-refresh-token"
-                }
-            });
-        });
-
-        test("Case: Expired access token with an invalid or expired refresh token", async () => {
-            // Arrange
-            (jwt.verify as jest.Mock).mockImplementation(() => { throw new Error("TokenExpiredError"); });
-            (jwt.decode as jest.Mock).mockReturnValue({ id: "4" });
-
-            mockUserService.refreshAccessToken = jest.fn().mockRejectedValue(new Error("Failed to refresh token: Invalid refresh token"));
-            mockRequest.headers = { authorization: "Bearer expiredtoken" };
-            mockRequest.body = { refreshToken: "stale-or-forged-refresh-token" };
-
-            // Act
-            await userController.jwtLogin(mockRequest as Request, mockResponse as Response);
-
-            // Assert
-            expect(statusMock).toHaveBeenCalledWith(401);
-            expect(jsonMock).toHaveBeenCalledWith({
-                message: "Refresh token expired, please log in again"
+                message: "Invalid or expired token. Please refresh."
             });
         });
 
         test("Case: Invalid token structure", async () => {
             // Arrange
             (jwt.verify as jest.Mock).mockImplementation(() => { throw new Error("Invalid token"); });
-            (jwt.decode as jest.Mock).mockReturnValue(null);
             mockRequest.headers = { authorization: "Bearer badtoken" };
 
             // Act
@@ -531,7 +483,7 @@ describe("UserController", () => {
 
             // Assert
             expect(statusMock).toHaveBeenCalledWith(401);
-            expect(jsonMock).toHaveBeenCalledWith({ message: "Invalid token" });
+            expect(jsonMock).toHaveBeenCalledWith({ message: "Invalid or expired token. Please refresh." });
         });
     });
 

@@ -65,7 +65,7 @@ export default class UserService {
           // Save refresh token to database
           const refreshTokenExpiresAt = new Date(
             Date.now() + 7 * 24 * 60 * 60 * 1000
-          ); // 1 day from now
+          ); // 7 days from now
           await UserRepository.updateRefreshToken(
             existingUser.id,
             refreshToken,

@@ -1,8 +1,7 @@
-import e, { Request, Response } from "express";
+import { Request, Response } from "express";
 import UserService from "../services/user-service";
 import { UserItemResponse } from "../dtos/user-item-response";
 import jwt from "jsonwebtoken";
-import { generateAccessToken } from "../utils/generate-token";
 
 interface JwtPayload {
     id: string;
@@ -101,11 +100,6 @@ export default class UserController {
         await userToUpdate.save();
       }
 
-      const token = {
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-      };
-
       res.cookie('token', data.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -175,12 +169,7 @@ export default class UserController {
         maxAge: 7 * 24 * 60 * 60 * 1000 
       });
 
-      return res.status(200).json({
-        message: "Token refreshed successfully",
-        data: {
-          refreshToken: newRefreshToken,
-        },
-      });
+      return res.status(200).json({ message: "Token refreshed successfully" });
     } catch (error: any) {
       return res.status(401).json({ message: error.message });
     }

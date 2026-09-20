@@ -11,6 +11,40 @@ export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
+    let refreshInterval;
+    let cancelled = false;
+
+    const clearSession = () => {
+      if (!cancelled) {
+        setUser(null);
+      }
+      localStorage.removeItem('currentUser');
+    };
+
+    const getSession = () => fetch(`${API_URL}/auth/jwt-login`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const renewSession = async () => {
+      const response = await fetch(`${API_URL}/auth/refresh-token`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to refresh session');
+      }
+    };
+
+    const handleRenewalFailure = () => {
+      if (refreshInterval) {
+        window.clearInterval(refreshInterval);
+      }
+      clearSession();
+    };
+
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
       try {
@@ -21,26 +55,44 @@ export const UserProvider = ({ children }) => {
       }
     }
 
-    // Silently verify the secure cookie in the background
-    fetch(`${API_URL}/auth/jwt-login`, {
-        method: "POST",
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-    })
-    .then(res => {
-        if (!res.ok) throw new Error("Session expired");
-        return res.json();
-    })
-    .then(data => {
-        if (data.data?.user) {
-            setUser(prev => ({ ...prev, ...data.data.user }));
+    const restoreSession = async () => {
+      try {
+        let response = await getSession();
+
+        if (response.status === 401) {
+          await renewSession();
+          response = await getSession();
         }
-    })
-    .catch(err => {
-        console.error("Silent auth check failed:", err);
-        setUser(null);
-        localStorage.removeItem("currentUser");
-    });
+
+        if (!response.ok) {
+          throw new Error('Session expired');
+        }
+
+        const data = await response.json();
+        if (!data.data?.user) {
+          throw new Error('Session user is missing');
+        }
+
+        if (!cancelled) {
+          setUser(previousUser => ({ ...previousUser, ...data.data.user }));
+          refreshInterval = window.setInterval(() => {
+            renewSession().catch(handleRenewalFailure);
+          }, 14 * 60 * 1000);
+        }
+      } catch (error) {
+        console.error('Silent auth check failed:', error);
+        clearSession();
+      }
+    };
+
+    restoreSession();
+
+    return () => {
+      cancelled = true;
+      if (refreshInterval) {
+        window.clearInterval(refreshInterval);
+      }
+    };
   }, []);
 
   // Save user to localStorage whenever it changes
