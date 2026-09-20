@@ -32,6 +32,7 @@ describe("UserController", () => {
   let jsonMock: jest.Mock;
   let statusMock: jest.Mock;
   let cookieMock: jest.Mock;
+  let clearCookieMock: jest.Mock;
 
   beforeEach(() => {
     // Reset mocks for each test
@@ -43,11 +44,13 @@ describe("UserController", () => {
     jsonMock = jest.fn().mockReturnThis();
     statusMock = jest.fn().mockReturnValue({ json: jsonMock });
     cookieMock = jest.fn().mockReturnThis();
+    clearCookieMock = jest.fn().mockReturnThis();
     mockRequest = {};
     mockResponse = {
       status: statusMock,
       json: jsonMock,
       cookie: cookieMock,
+      clearCookie: clearCookieMock,
     };
   });
 
@@ -157,10 +160,12 @@ describe("UserController", () => {
       expect(cookieMock).toHaveBeenCalledWith('token', 'mock-access-token', expect.objectContaining({
         httpOnly: true,
         sameSite: 'lax',
+        path: '/',
       }));
       expect(cookieMock).toHaveBeenCalledWith('refreshToken', 'mock-refresh-token', expect.objectContaining({
         httpOnly: true,
         sameSite: 'lax',
+        path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       }));
     });
@@ -214,10 +219,12 @@ describe("UserController", () => {
       expect(cookieMock).toHaveBeenCalledWith('token', 'new-access-token', expect.objectContaining({
         httpOnly: true,
         sameSite: 'lax',
+        path: '/',
       }));
       expect(cookieMock).toHaveBeenCalledWith('refreshToken', 'new-refresh-token', expect.objectContaining({
         httpOnly: true,
         sameSite: 'lax',
+        path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       }));
     });
@@ -253,6 +260,25 @@ describe("UserController", () => {
       expect(jsonMock).toHaveBeenCalledWith({
         message: errorMessage
       });
+    });
+  });
+
+  describe("logout", () => {
+    test("Case: Clears both authentication cookies with the root path", async () => {
+      await userController.logout(mockRequest as Request, mockResponse as Response);
+
+      expect(clearCookieMock).toHaveBeenCalledWith("token", expect.objectContaining({
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+      }));
+      expect(clearCookieMock).toHaveBeenCalledWith("refreshToken", expect.objectContaining({
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+      }));
+      expect(statusMock).toHaveBeenCalledWith(200);
+      expect(jsonMock).toHaveBeenCalledWith({ message: "Logged out successfully" });
     });
   });
 

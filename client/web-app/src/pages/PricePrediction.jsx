@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Button } from "../components/Button";
 import NavBar from "../components/NavBar";
+import { UserContext } from "../context/user";
 import {
   getPriceHealth,
   predictPrice,

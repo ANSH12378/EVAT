@@ -21,6 +21,8 @@ function SelectField({
   disabled,
 }) {
 
+  /*
+
   // Local state for EV dropdowns
   const [selectedEvMake, setSelectedEvMake] = useState("Select");
   const [selectedEvModel, setSelectedEvModel] = useState("Select");
@@ -202,6 +204,7 @@ function SelectField({
   // Error while loading ICE data
   if (iceError) return <div className="horizontal center">Error loading ICE vehicles: {iceError}</div>;
 
+  */
   return (
     <div>
       <label

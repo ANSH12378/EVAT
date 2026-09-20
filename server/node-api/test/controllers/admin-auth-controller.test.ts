@@ -34,7 +34,8 @@ describe('admin-auth-controller', () => {
         // Mock response object with spies
         res = {
             status: jest.fn().mockReturnThis(),
-            json: jest.fn()
+            json: jest.fn(),
+            cookie: jest.fn().mockReturnThis(),
         };
 
         // Mock request object
@@ -218,12 +219,17 @@ describe('admin-auth-controller', () => {
             await adminController.verifyAdmin2FA(req, res);
 
             // Assert
-            expect(jwt.sign).toHaveBeenCalledWith({ admin: true }, 'testsecret', { expiresIn: '1d' });
+            expect(jwt.sign).toHaveBeenCalledWith({ admin: true, type: 'access' }, 'testsecret', { expiresIn: '1d' });
             expect(mockAdmin.twoFactorCode).toBe('');
             expect(mockAdmin.twoFactorCodeExpiry).toEqual(expect.any(Date));
             expect(mockAdmin.save).toHaveBeenCalled();
+            expect(res.cookie).toHaveBeenCalledWith('token', mockToken, expect.objectContaining({
+                httpOnly: true,
+                sameSite: 'lax',
+                path: '/',
+            }));
             expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.json).toHaveBeenCalledWith({ token: mockToken });
+            expect(res.json).toHaveBeenCalledWith({ message: 'Admin login successful' });
         });
 
         test('Case: Handle server errors', async () => {

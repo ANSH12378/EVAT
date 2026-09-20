@@ -1,10 +1,11 @@
 import jwt from "jsonwebtoken";
 import { IUser } from "../models/user-model";
 
-const secret = process.env.JWT_SECRET;
+const getSecret = () => process.env.JWT_SECRET;
 
 export const generateAccessToken = (user: IUser) => {
 
+  const secret = getSecret();
   if (!secret) {
     throw new Error("JWT_SECRET is not defined in the environment variables.");
   }
@@ -19,6 +20,7 @@ export const generateAccessToken = (user: IUser) => {
 
 export const generateRefreshToken = (user: IUser) => {
 
+  const secret = getSecret();
   if (!secret) {
     throw new Error("JWT_SECRET is not defined in the environment variables.");
   }

@@ -2,13 +2,7 @@ import { Request, Response } from "express";
 import UserService from "../services/user-service";
 import { UserItemResponse } from "../dtos/user-item-response";
 import jwt from "jsonwebtoken";
-
-const configuredSameSite = process.env.COOKIE_SAME_SITE?.toLowerCase();
-const cookieSameSite: 'lax' | 'strict' | 'none' =
-  configuredSameSite === 'none' || configuredSameSite === 'strict'
-    ? configuredSameSite
-    : 'lax';
-const cookieSecure = process.env.NODE_ENV === 'production' || cookieSameSite === 'none';
+import { cookieOptions } from "../config/cookie";
 
 interface JwtPayload {
     id: string;
@@ -108,15 +102,11 @@ export default class UserController {
       }
 
       res.cookie('token', data.accessToken, {
-        httpOnly: true,
-        secure: cookieSecure,
-        sameSite: cookieSameSite
+        ...cookieOptions,
       });
 
       res.cookie('refreshToken', data.refreshToken, {
-        httpOnly: true,
-        secure: cookieSecure,
-        sameSite: cookieSameSite,
+        ...cookieOptions,
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
       });
 
@@ -133,12 +123,6 @@ export default class UserController {
 
   async logout(req: Request, res: Response): Promise<Response> {
     // Clear the secure cookie by matching the exact creation flags
-    const cookieOptions = {
-      httpOnly: true,
-      secure: cookieSecure,
-      sameSite: cookieSameSite
-    };
-
     res.clearCookie('token', cookieOptions);
     res.clearCookie('refreshToken', cookieOptions);
 
@@ -164,15 +148,11 @@ export default class UserController {
         await this.userService.refreshAccessToken(refreshToken);
 
       res.cookie('token', accessToken, {
-        httpOnly: true,
-        secure: cookieSecure,
-        sameSite: cookieSameSite
+        ...cookieOptions,
       });
 
       res.cookie('refreshToken', newRefreshToken, {
-        httpOnly: true,
-        secure: cookieSecure,
-        sameSite: cookieSameSite,
+        ...cookieOptions,
         maxAge: 7 * 24 * 60 * 60 * 1000 
       });
 

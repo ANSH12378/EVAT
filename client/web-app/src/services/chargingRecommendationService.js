@@ -19,7 +19,6 @@ const fetchChargingJson = async (path, { method = "GET", headers = {}, body } = 
 export const getChargingRecommendations = (latitude, longitude) => {
   return fetchChargingJson("/charger-recommendations", {
     method: "POST",
-    headers: authHeaders(),
     body: {
       latitude,
       longitude,
@@ -32,7 +31,6 @@ export const selectChargingStation = (sessionId, stationId) => {
     `/charger-recommendations/${sessionId}/selection`,
     {
       method: "POST",
-      headers: authHeaders(),
       body: {
         stationId,
       },

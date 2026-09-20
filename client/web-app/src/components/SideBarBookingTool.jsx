@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useContext, useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { toast } from "react-toastify";
@@ -6,6 +6,7 @@ import ErrorMessage from "../components/ErrorMessage";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { Textarea } from "./Textarea";
+import { UserContext } from "../context/user";
 
 const API_URL = import.meta.env.VITE_API_URL
 const BOOKING_ENDPOINT = `${API_URL}/bookings`;

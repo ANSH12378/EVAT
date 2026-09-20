@@ -561,7 +561,7 @@ function Achievements() {
                 <div className="mt-3">
                   <Button
                     type="button"
-                    onClick={handleSetFlagTrue}
+                    onClick={handleSetFlag}
                     size="tiny"
                     disabled={!selectedFlag}
                   >

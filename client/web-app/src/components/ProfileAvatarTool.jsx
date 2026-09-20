@@ -194,7 +194,7 @@ const ProfileAvatarTool = ({
     }
 
 
-    if (!user) return;
+    if (!contextUser) return;
 
     setUploading(true);
     setError("");

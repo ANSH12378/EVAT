@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import DOMPurify from 'dompurify';
 import { Mail, User, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { submitFeedback } from '../services/feedbackService';
 import ErrorMessage from '../components/ErrorMessage';
 import SuccessMessage from '../components/SuccessMessage';
+import { UserContext } from '../context/user';
 
 const RECENT_SUCCESS_MESSAGE_LINGER = 5000;
 

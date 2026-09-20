@@ -32,14 +32,14 @@ function Signin() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<SigninErrorResponseType>();
   const [submitting, setSubmitting] = useState(false);
-  const { user, setUser } = useContext(UserContext);
+  const { user, authReady, setUser } = useContext(UserContext);
   const navigate = useNavigate();
   
   useEffect(() => {
-    if (user) {
+    if (authReady && user) {
       navigate('/map');
     }
-  }, [user, navigate]);
+  }, [authReady, user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

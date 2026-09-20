@@ -83,7 +83,7 @@ describe("is-admin-auth", () => {
     test("Case: Return 403 if user is not an admin", () => {
       // Arrange
       mockRequest.headers = { authorization: "Bearer validtoken" };
-      (jwt.verify as jest.Mock).mockReturnValue({ admin: false });
+      (jwt.verify as jest.Mock).mockReturnValue({ admin: false, type: "access" });
 
       // Act
       isAdminAuthenticated(
@@ -102,7 +102,7 @@ describe("is-admin-auth", () => {
     test("Case: Calls next middleware if token is valid", () => {
       // Arrange
       mockRequest.headers = { authorization: "Bearer validadmintoken" };
-      (jwt.verify as jest.Mock).mockReturnValue({ admin: true });
+      (jwt.verify as jest.Mock).mockReturnValue({ admin: true, type: "access" });
 
       // Act
       isAdminAuthenticated(

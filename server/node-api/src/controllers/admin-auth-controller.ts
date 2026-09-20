@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer';
 
 import Admin from '../models/admin';
 import { env } from '../config/env';
+import { cookieOptions } from '../config/cookie';
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -78,9 +79,7 @@ export const verifyAdmin2FA = async (req: Request, res: Response) => {
     });
 
     res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' // adjust to strict in deployment
+      ...cookieOptions,
     });
 
     return res.status(200).json({ message: 'Admin login successful' });

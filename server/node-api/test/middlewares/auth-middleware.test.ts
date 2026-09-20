@@ -71,7 +71,7 @@ describe("auth-middleware", () => {
       
       // Assert
       expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ message: "No token provided" });
+      expect(res.json).toHaveBeenCalledWith({ message: "Invalid token" });
       expect(next).not.toHaveBeenCalled();
     });
     
@@ -104,7 +104,8 @@ describe("auth-middleware", () => {
       // Mock jwt.verify to return admin payload
       (jwt.verify as jest.Mock).mockReturnValue({
         admin: true,
-        email: "admin@example.com"
+        email: "admin@example.com",
+        type: "access"
       });
       
       // Act
@@ -128,7 +129,8 @@ describe("auth-middleware", () => {
       // Mock jwt.verify to return admin payload
       (jwt.verify as jest.Mock).mockReturnValue({
         admin: true,
-        email: "admin@example.com"
+        email: "admin@example.com",
+        type: "access"
       });
       
       // Act
@@ -147,7 +149,8 @@ describe("auth-middleware", () => {
       
       // Mock jwt.verify to return admin payload without email
       (jwt.verify as jest.Mock).mockReturnValue({
-        admin: true
+        admin: true,
+        type: "access"
       });
       
       // Act
@@ -172,7 +175,8 @@ describe("auth-middleware", () => {
       // Mock jwt.verify to return payload without ID
       (jwt.verify as jest.Mock).mockReturnValue({
         email: "user@example.com",
-        role: "user"
+        role: "user",
+        type: "access"
       });
       
       // Act
@@ -192,7 +196,8 @@ describe("auth-middleware", () => {
       // Mock jwt.verify to return valid user payload
       (jwt.verify as jest.Mock).mockReturnValue({
         id: "user123",
-        email: "user@example.com"
+        email: "user@example.com",
+        type: "access"
       });
       
       // Mock UserRepository to return null
@@ -215,7 +220,8 @@ describe("auth-middleware", () => {
       // Mock jwt.verify to return valid user payload
       (jwt.verify as jest.Mock).mockReturnValue({
         id: "user123",
-        email: "user@example.com"
+        email: "user@example.com",
+        type: "access"
       });
       
       // Mock UserRepository to return a user with "user" role
@@ -243,7 +249,8 @@ describe("auth-middleware", () => {
       // Mock jwt.verify to return valid user payload
       (jwt.verify as jest.Mock).mockReturnValue({
         id: "user123",
-        email: "user@example.com"
+        email: "user@example.com",
+        type: "access"
       });
       
       // Mock UserRepository to return a user with "user" role

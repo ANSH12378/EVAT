@@ -3,7 +3,10 @@ import User from "../../src/models/user-model";
 import UserRepository from "../../src/repositories/user-repository";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import generateToken from "../../src/utils/generate-token";
+import {
+    generateAccessToken,
+    generateRefreshToken,
+} from "../../src/utils/generate-token";
 
 // Mock dependencies
 jest.mock("../../src/repositories/user-repository");
@@ -144,11 +147,8 @@ describe("user-service", () => {
 
             (UserRepository.findByEmail as jest.Mock).mockResolvedValue(mockUser);
             (bcrypt.compareSync as jest.Mock).mockReturnValue(true);
-            (generateToken as jest.Mock).mockImplementation((user, expiry) => {
-                if (expiry === "1h") return mockAccessToken;
-                if (expiry === "1d") return mockRefreshToken;
-                return "";
-            });
+            (generateAccessToken as jest.Mock).mockReturnValue(mockAccessToken);
+            (generateRefreshToken as jest.Mock).mockReturnValue(mockRefreshToken);
             (UserRepository.updateRefreshToken as jest.Mock).mockResolvedValue(true);
 
             // Act
@@ -157,8 +157,8 @@ describe("user-service", () => {
             // Assert
             expect(UserRepository.findByEmail).toHaveBeenCalledWith(mockEmail);
             expect(bcrypt.compareSync).toHaveBeenCalledWith(mockPassword, mockUser.password);
-            expect(generateToken).toHaveBeenCalledWith(mockUser, "1h");
-            expect(generateToken).toHaveBeenCalledWith(mockUser, "1d");
+            expect(generateAccessToken).toHaveBeenCalledWith(mockUser);
+            expect(generateRefreshToken).toHaveBeenCalledWith(mockUser);
             expect(UserRepository.updateRefreshToken).toHaveBeenCalledWith(
                 mockUser.id,
                 mockRefreshToken,
@@ -213,7 +213,8 @@ describe("user-service", () => {
             const mockDecodedToken = {
                 id: "user123",
                 email: "test@example.com",
-                role: "user"
+                role: "user",
+                type: "refresh"
             };
             const mockUser = {
                 id: "user123",
@@ -225,11 +226,8 @@ describe("user-service", () => {
 
             (jwt.verify as jest.Mock).mockReturnValue(mockDecodedToken);
             (UserRepository.findById as jest.Mock).mockResolvedValue(mockUser);
-            (generateToken as jest.Mock).mockImplementation((user, expiry) => {
-                if (expiry === "1h") return mockNewAccessToken;
-                if (expiry === "1d") return mockNewRefreshToken;
-                return "";
-            });
+            (generateAccessToken as jest.Mock).mockReturnValue(mockNewAccessToken);
+            (generateRefreshToken as jest.Mock).mockReturnValue(mockNewRefreshToken);
             (UserRepository.updateRefreshToken as jest.Mock).mockResolvedValue(true);
 
             // Act
@@ -238,8 +236,8 @@ describe("user-service", () => {
             // Assert
             expect(jwt.verify).toHaveBeenCalledWith(mockRefreshToken, "test-secret");
             expect(UserRepository.findById).toHaveBeenCalledWith(mockDecodedToken.id);
-            expect(generateToken).toHaveBeenCalledWith(mockUser, "1h");
-            expect(generateToken).toHaveBeenCalledWith(mockUser, "1d");
+            expect(generateAccessToken).toHaveBeenCalledWith(mockUser);
+            expect(generateRefreshToken).toHaveBeenCalledWith(mockUser);
             expect(UserRepository.updateRefreshToken).toHaveBeenCalledWith(
                 mockUser.id,
                 mockNewRefreshToken,
@@ -274,7 +272,8 @@ describe("user-service", () => {
             const mockDecodedToken = {
                 id: "user123",
                 email: "test@example.com",
-                role: "user"
+                role: "user",
+                type: "refresh"
             };
 
             process.env.JWT_SECRET = "test-secret";
@@ -294,7 +293,8 @@ describe("user-service", () => {
             const mockDecodedToken = {
                 id: "user123",
                 email: "test@example.com",
-                role: "user"
+                role: "user",
+                type: "refresh"
             };
             const mockUser = {
                 id: "user123",
@@ -319,7 +319,8 @@ describe("user-service", () => {
             const mockDecodedToken = {
                 id: "user123",
                 email: "test@example.com",
-                role: "user"
+                role: "user",
+                type: "refresh"
             };
             const mockUser = {
                 id: "user123",

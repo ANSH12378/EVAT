@@ -4,7 +4,8 @@
 // limit bookings to be seen based on amount/time,
 // link station names to details.
 
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
+import { UserContext } from "../context/user";
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -21,7 +22,6 @@ export default function BookingHistoryTable() {
     setError("");
 
     try {
-      const userId = getUserId();
       if (!userId) {
         setBookings([]);
         setError("Please sign in to view your bookings.");
