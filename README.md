@@ -75,6 +75,7 @@ There's an `.env.example` file provided that you can follow.
 ```env
 MONGODB_URI = mongodb://<<address>>:<<port>>/EVAT
 JWT_SECRET = 'abc123'
+CLIENT_ORIGIN = "http://localhost:3000"
 GOOGLE_MAPS_API_KEY=ABCD1234
 GOOGLE_AI_API_KEY=ABCD1234
 GOOGLE_APPLICATION_CREDENTIALS="./google-credentials.json"

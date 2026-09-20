@@ -39,6 +39,8 @@ export const UserProvider = ({ children }) => {
     }
 
     const restoreSession = async () => {
+      let clearOnFailure = false;
+
       try {
         let response = await getSession();
 
@@ -49,6 +51,7 @@ export const UserProvider = ({ children }) => {
           });
 
           if (!refreshResponse.ok) {
+            clearOnFailure = refreshResponse.status === 400 || refreshResponse.status === 401;
             throw new Error('Unable to refresh session');
           }
 
@@ -56,6 +59,7 @@ export const UserProvider = ({ children }) => {
         }
 
         if (!response.ok) {
+          clearOnFailure = response.status === 400 || response.status === 401;
           throw new Error('Session expired');
         }
 
@@ -69,7 +73,9 @@ export const UserProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('Silent auth check failed:', error);
-        clearSession();
+        if (clearOnFailure) {
+          clearSession();
+        }
       } finally {
         if (!cancelled) {
           setAuthReady(true);
@@ -99,14 +105,15 @@ export const UserProvider = ({ children }) => {
         });
 
         if (!response.ok) {
-          throw new Error('Unable to refresh session');
+          if (!cancelled && (response.status === 400 || response.status === 401)) {
+            setUser(null);
+            localStorage.removeItem('currentUser');
+          } else {
+            console.error('Session renewal failed:', new Error(`Unexpected status ${response.status}`));
+          }
         }
       } catch (error) {
         console.error('Session renewal failed:', error);
-        if (!cancelled) {
-          setUser(null);
-          localStorage.removeItem('currentUser');
-        }
       }
     }, 14 * 60 * 1000);
 

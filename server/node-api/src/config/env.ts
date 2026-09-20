@@ -16,6 +16,7 @@ export const env = {
   PORT: process.env.PORT ?? "8080",
 
   DOMAIN_URL: process.env.DOMAIN_URL ?? "http://localhost",
+  CLIENT_ORIGIN: process.env.CLIENT_ORIGIN ?? "http://localhost:3000",
 
   MONGODB_USERNAME: process.env.MONGODB_USERNAME!,
   MONGODB_PASSWORD: process.env.MONGODB_PASSWORD!,

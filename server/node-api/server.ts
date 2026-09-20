@@ -59,7 +59,7 @@ const createDefaultAdmin = async () => {
 };
 
 app.use(cors({
-  origin: "http://localhost:3000", // Change to URL at deployment
+  origin: env.CLIENT_ORIGIN,
   credentials: true
 }));
 app.use(express.json());
