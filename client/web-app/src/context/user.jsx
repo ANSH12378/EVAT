@@ -45,10 +45,22 @@ export const UserProvider = ({ children }) => {
       headers: { 'Content-Type': 'application/json' },
     });
 
-    const restoreExpiredSession = () => withRefreshLock(async () => {
+    const restoreSessionWithRefresh = () => withRefreshLock(async () => {
       const currentResponse = await getSession();
-      if (currentResponse.ok || currentResponse.status !== 401) {
+
+      if (!currentResponse.ok && currentResponse.status !== 401) {
         return currentResponse;
+      }
+
+      if (wasRecentlyRefreshed()) {
+        if (currentResponse.ok) {
+          return currentResponse;
+        }
+
+        const sessionAfterOtherTabRefresh = await getSession();
+        if (sessionAfterOtherTabRefresh.ok) {
+          return sessionAfterOtherTabRefresh;
+        }
       }
 
       const refreshResponse = await fetch(`${API_URL}/auth/refresh-token`, {
@@ -78,11 +90,7 @@ export const UserProvider = ({ children }) => {
       let clearOnFailure = false;
 
       try {
-        let response = await getSession();
-
-        if (response.status === 401) {
-          response = await restoreExpiredSession();
-        }
+        const response = await restoreSessionWithRefresh();
 
         if (!response.ok) {
           clearOnFailure = response.status === 400 || response.status === 401 || response.status === 404;
