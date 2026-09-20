@@ -1,4 +1,9 @@
-from training.user_context import build_user_context
+try:
+    from charging_station_recommendation_api.training.user_context import (
+        build_user_context,
+    )
+except ModuleNotFoundError:
+    from user_context import build_user_context
 import os
 import re
 from pathlib import Path

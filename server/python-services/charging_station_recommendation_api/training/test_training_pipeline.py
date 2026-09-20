@@ -4,9 +4,11 @@ import os
 import joblib
 import pandas as pd
 
-from training.user_context import build_user_context
+from charging_station_recommendation_api.training.user_context import (
+    build_user_context,
+)
 
-from training.dataset_builder import (
+from charging_station_recommendation_api.training.dataset_builder import (
     is_session_snapshot_invalid,
     clean_text,
     clean_pay_at_location,
@@ -63,39 +65,39 @@ class TestTrainingPipeline(unittest.TestCase):
     def test_clean_text(self):
         self.assertEqual(
             clean_text(" Low "),
-            "low"
+            "low",
         )
 
         self.assertEqual(
             clean_text(None),
-            "unknown"
+            "unknown",
         )
 
     def test_clean_pay_at_location(self):
         self.assertEqual(
             clean_pay_at_location(True),
-            "yes"
+            "yes",
         )
 
         self.assertEqual(
             clean_pay_at_location("NO"),
-            "no"
+            "no",
         )
 
         self.assertEqual(
             clean_pay_at_location(None),
-            "unknown"
+            "unknown",
         )
 
     def test_clean_cost(self):
         self.assertEqual(
             clean_cost("$0.30/kWh"),
-            0.30
+            0.30,
         )
 
         self.assertEqual(
             clean_cost(0.45),
-            0.45
+            0.45,
         )
 
         self.assertIsNone(
@@ -108,7 +110,8 @@ class TestTrainingPipeline(unittest.TestCase):
             "userId": "user-1",
             "createdAt": 100,
             "selection": {
-                "stationId": "station-a"
+                "stationId": "station-a",
+                "selectedAt": 110,
             },
         }
 
@@ -129,7 +132,8 @@ class TestTrainingPipeline(unittest.TestCase):
             "userId": "user-1",
             "createdAt": 200,
             "selection": {
-                "stationId": "station-b"
+                "stationId": "station-b",
+                "selectedAt": 210,
             },
         }
 
@@ -138,7 +142,8 @@ class TestTrainingPipeline(unittest.TestCase):
             "userId": "user-1",
             "createdAt": 100,
             "selection": {
-                "stationId": "station-a"
+                "stationId": "station-a",
+                "selectedAt": 150,
             },
         }
 
@@ -147,7 +152,8 @@ class TestTrainingPipeline(unittest.TestCase):
             "userId": "user-1",
             "createdAt": 300,
             "selection": {
-                "stationId": "station-c"
+                "stationId": "station-c",
+                "selectedAt": 310,
             },
         }
 
@@ -166,13 +172,55 @@ class TestTrainingPipeline(unittest.TestCase):
             1,
         )
 
+    def test_future_selection_is_not_previous_history(self):
+        """
+        A session created earlier must not count as previous history
+        if its selection happened after the current recommendation
+        session was created.
+        """
+
+        previous_session = {
+            "_id": "session-1",
+            "userId": "user-1",
+            "createdAt": 100,
+            "selection": {
+                "stationId": "station-a",
+                "selectedAt": 220,
+            },
+        }
+
+        current_session = {
+            "_id": "session-2",
+            "userId": "user-1",
+            "createdAt": 200,
+            "selection": {
+                "stationId": "station-b",
+                "selectedAt": 230,
+            },
+        }
+
+        context = build_user_context(
+            user_id="user-1",
+            current_session=current_session,
+            all_sessions=[
+                previous_session,
+                current_session,
+            ],
+        )
+
+        self.assertEqual(
+            context["userPreviousSessions"],
+            0,
+        )
+
     def test_user_context_ignores_other_users(self):
         current_session = {
             "_id": "session-2",
             "userId": "user-1",
             "createdAt": 200,
             "selection": {
-                "stationId": "station-b"
+                "stationId": "station-b",
+                "selectedAt": 210,
             },
         }
 
@@ -181,7 +229,8 @@ class TestTrainingPipeline(unittest.TestCase):
             "userId": "user-2",
             "createdAt": 100,
             "selection": {
-                "stationId": "station-a"
+                "stationId": "station-a",
+                "selectedAt": 150,
             },
         }
 
@@ -230,6 +279,7 @@ class TestTrainingPipeline(unittest.TestCase):
             probabilities.shape,
             (1, 2),
         )
+
 
 if __name__ == "__main__":
     unittest.main()
