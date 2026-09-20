@@ -1,3 +1,9 @@
+try:
+    from charging_station_recommendation_api.training.user_context import (
+        build_user_context,
+    )
+except ModuleNotFoundError:
+    from user_context import build_user_context
 import os
 import re
 from pathlib import Path
@@ -393,6 +399,12 @@ def build_dataset():
 
         selected_candidate_found = False
 
+        user_context = build_user_context(
+            user_id=str(session.get("userId")),
+            current_session=session,
+            all_sessions=sessions,
+        )
+
         for candidate in candidates:
 
             station_id_raw = candidate.get(
@@ -452,6 +464,7 @@ def build_dataset():
                 # IDs
                 "sessionId": session_id,
                 "stationId": station_id,
+                "userPreviousSessions": user_context["userPreviousSessions"],
 
                 # Numerical features
                 "distanceKm": safe_float(
