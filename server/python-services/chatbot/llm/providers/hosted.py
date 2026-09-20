@@ -1,4 +1,5 @@
-from typing import Any, Dict, Sequence
+import json
+from typing import Any, Dict, Optional, Sequence
 
 import httpx
 
@@ -9,7 +10,7 @@ from chatbot.llm.exceptions import (
     LLMModelNotFoundError,
     LLMTimeoutError,
 )
-from chatbot.llm.models import LLMMessage, LLMResponse
+from chatbot.llm.models import LLMMessage, LLMResponse, LLMToolCall
 from chatbot.llm.providers.base import LLMProvider
 
 
@@ -53,23 +54,49 @@ class FutureHostedProvider(LLMProvider):
         self,
         messages: Sequence[LLMMessage],
         temperature: float = 0.2,
+        tools: Optional[Sequence[Dict[str, Any]]] = None,
     ) -> LLMResponse:
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
         }
 
+        serialized_messages = []
+
+        for message in messages:
+            serialized_message: Dict[str, Any] = {
+                "role": message.role,
+                "content": message.content,
+            }
+
+            if message.tool_calls:
+                serialized_message["tool_calls"] = [
+                    {
+                        "id": tool_call.id,
+                        "type": "function",
+                        "function": {
+                            "name": tool_call.name,
+                            "arguments": json.dumps(tool_call.arguments),
+                        },
+                    }
+                    for tool_call in message.tool_calls
+                ]
+
+            if message.role == "tool" and message.tool_call_id:
+                serialized_message["tool_call_id"] = (
+                    message.tool_call_id
+                )
+
+            serialized_messages.append(serialized_message)
+
         payload: Dict[str, Any] = {
             "model": self._model,
-            "messages": [
-                {
-                    "role": message.role,
-                    "content": message.content,
-                }
-                for message in messages
-            ],
+            "messages": serialized_messages,
             "temperature": temperature,
         }
+
+        if tools:
+            payload["tools"] = list(tools)
 
         try:
             async with httpx.AsyncClient(
@@ -115,7 +142,9 @@ class FutureHostedProvider(LLMProvider):
         try:
             data = response.json()
             choice = data["choices"][0]
-            content = choice["message"]["content"]
+            response_message = choice["message"]
+            content = response_message.get("content") or ""
+            raw_tool_calls = response_message.get("tool_calls") or []
         except (
             KeyError,
             IndexError,
@@ -126,7 +155,52 @@ class FutureHostedProvider(LLMProvider):
                 "The hosted provider returned an unexpected response."
             ) from exc
 
-        if not isinstance(content, str) or not content.strip():
+        if not isinstance(content, str):
+            raise LLMInvalidResponseError(
+                "The hosted provider returned invalid message content."
+            )
+
+        tool_calls = []
+
+        if not isinstance(raw_tool_calls, list):
+            raise LLMInvalidResponseError(
+                "The hosted provider returned invalid tool calls."
+            )
+
+        for raw_call in raw_tool_calls:
+            try:
+                function = raw_call["function"]
+                name = function["name"]
+                raw_arguments = function.get("arguments", "{}")
+
+                if isinstance(raw_arguments, str):
+                    arguments = json.loads(raw_arguments)
+                else:
+                    arguments = raw_arguments
+            except (KeyError, TypeError, ValueError) as exc:
+                raise LLMInvalidResponseError(
+                    "The hosted provider returned an invalid tool call."
+                ) from exc
+
+            if not isinstance(name, str) or not name.strip():
+                raise LLMInvalidResponseError(
+                    "The hosted provider returned a tool call without a name."
+                )
+
+            if not isinstance(arguments, dict):
+                raise LLMInvalidResponseError(
+                    "The hosted provider returned invalid tool arguments."
+                )
+
+            tool_calls.append(
+                LLMToolCall(
+                    name=name.strip(),
+                    arguments=arguments,
+                    id=raw_call.get("id"),
+                )
+            )
+
+        if not content.strip() and not tool_calls:
             raise LLMInvalidResponseError(
                 "The hosted provider returned an empty response."
             )
@@ -140,6 +214,7 @@ class FutureHostedProvider(LLMProvider):
             finish_reason=choice.get("finish_reason"),
             prompt_tokens=usage.get("prompt_tokens"),
             completion_tokens=usage.get("completion_tokens"),
+            tool_calls=tool_calls,
         )
 
     async def health_check(self) -> bool:

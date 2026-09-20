@@ -4,6 +4,7 @@ __pycache__/
 .env
 .DS_Store
 rasa/.rasa/
+rasa/models/
 node_modules/
 *.md
 .git/

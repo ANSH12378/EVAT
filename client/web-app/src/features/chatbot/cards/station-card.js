@@ -33,6 +33,37 @@ function formatStationDistance(km) {
 
 
 /* =========================================================
+   UNTRUSTED STATION DATA
+   ========================================================= */
+
+function escapeStationHtml(value) {
+
+  const characters = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
+
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (character) => characters[character]
+  );
+}
+
+
+function formatStationCoordinate(value) {
+
+  const coordinate = Number(value);
+
+  return Number.isFinite(coordinate)
+    ? String(coordinate)
+    : "";
+}
+
+
+/* =========================================================
    AVAILABILITY
    ========================================================= */
 
@@ -230,13 +261,75 @@ function addStationCards(
          --------------------------------------------------- */
 
       const safeName =
-        station.name ||
-        "Unnamed station";
+        escapeStationHtml(
+          station.name ||
+          "Unnamed station"
+        );
 
 
       const safeAddress =
-        station.address ||
-        "Address unavailable";
+        escapeStationHtml(
+          station.address ||
+          "Address unavailable"
+        );
+
+
+      const safeTravelTime =
+        station.travel_time_minutes != null
+          ? `${escapeStationHtml(
+              station.travel_time_minutes
+            )} min`
+          : "—";
+
+
+      const safeTraffic =
+        escapeStationHtml(
+          station.traffic || "—"
+        );
+
+
+      const safeCost =
+        escapeStationHtml(
+          station.cost || "—"
+        );
+
+
+      const safePower =
+        station.power != null
+          ? `${escapeStationHtml(
+              station.power
+            )} kW`
+          : "—";
+
+
+      const safeStationId =
+        escapeStationHtml(
+          station.station_id || ""
+        );
+
+
+      const safeLatitude =
+        formatStationCoordinate(
+          station.latitude
+        );
+
+
+      const safeLongitude =
+        formatStationCoordinate(
+          station.longitude
+        );
+
+
+      const safeOriginLatitude =
+        formatStationCoordinate(
+          station.origin_latitude
+        );
+
+
+      const safeOriginLongitude =
+        formatStationCoordinate(
+          station.origin_longitude
+        );
 
 
       /* ---------------------------------------------------
@@ -424,11 +517,7 @@ function addStationCards(
                     Travel time
                   </p>
                   <p class="mt-1 text-xs font-medium text-white/80">
-                    ${
-                      station.travel_time_minutes != null
-                        ? `${station.travel_time_minutes} min`
-                        : "—"
-                    }
+                    ${safeTravelTime}
                   </p>
                 </div>
 
@@ -446,7 +535,7 @@ function addStationCards(
                     Traffic
                   </p>
                   <p class="mt-1 text-xs font-medium text-white/80">
-                    ${station.traffic || "—"}
+                    ${safeTraffic}
                   </p>
                 </div>
 
@@ -543,7 +632,7 @@ function addStationCards(
                       text-emerald-300
                     "
                   >
-                    ${station.cost || "—"}
+                    ${safeCost}
                   </p>
 
                 </div>
@@ -583,11 +672,7 @@ function addStationCards(
                       text-white/80
                     "
                   >
-                    ${
-                      station.power != null
-                        ? `${station.power} kW`
-                        : "—"
-                    }
+                    ${safePower}
                   </p>
 
                 </div>
@@ -628,11 +713,11 @@ function addStationCards(
                   focus-visible:ring-2
                   focus-visible:ring-emerald-400/50
                 "
-                data-id="${station.station_id}"
-                data-latitude="${station.latitude ?? ""}"
-                data-longitude="${station.longitude ?? ""}"
-                data-origin-latitude="${station.origin_latitude ?? ""}"
-                data-origin-longitude="${station.origin_longitude ?? ""}"
+                data-id="${safeStationId}"
+                data-latitude="${safeLatitude}"
+                data-longitude="${safeLongitude}"
+                data-origin-latitude="${safeOriginLatitude}"
+                data-origin-longitude="${safeOriginLongitude}"
               >
                 Get Directions
               </button>
