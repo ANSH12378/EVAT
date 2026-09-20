@@ -355,6 +355,7 @@ function Profile() {
     } catch(err) { console.error(err); }
     setContextUser(null);
     localStorage.removeItem("currentUser");
+    localStorage.removeItem("evat-token-refreshed-at");
     navigate("/signin");
   };
 

@@ -1,5 +1,21 @@
 import React, { createContext, useState, useEffect } from 'react';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const REFRESH_LOCK_NAME = 'evat-token-refresh';
+const REFRESH_TIMESTAMP_KEY = 'evat-token-refreshed-at';
+const REFRESH_INTERVAL_MS = 14 * 60 * 1000;
+
+const withRefreshLock = async (callback) => {
+  if (!navigator.locks) {
+    return callback();
+  }
+
+  return navigator.locks.request(REFRESH_LOCK_NAME, callback);
+};
+
+const wasRecentlyRefreshed = () => {
+  const refreshedAt = Number(localStorage.getItem(REFRESH_TIMESTAMP_KEY));
+  return Number.isFinite(refreshedAt) && Date.now() - refreshedAt < REFRESH_INTERVAL_MS;
+};
 
 export const UserContext = createContext({
   user: null,
@@ -20,12 +36,32 @@ export const UserProvider = ({ children }) => {
         setUser(null);
       }
       localStorage.removeItem('currentUser');
+      localStorage.removeItem(REFRESH_TIMESTAMP_KEY);
     };
 
     const getSession = () => fetch(`${API_URL}/auth/jwt-login`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
+    });
+
+    const restoreExpiredSession = () => withRefreshLock(async () => {
+      const currentResponse = await getSession();
+      if (currentResponse.ok || currentResponse.status !== 401) {
+        return currentResponse;
+      }
+
+      const refreshResponse = await fetch(`${API_URL}/auth/refresh-token`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!refreshResponse.ok) {
+        return refreshResponse;
+      }
+
+      localStorage.setItem(REFRESH_TIMESTAMP_KEY, String(Date.now()));
+      return getSession();
     });
 
     const storedUser = localStorage.getItem('currentUser');
@@ -45,17 +81,7 @@ export const UserProvider = ({ children }) => {
         let response = await getSession();
 
         if (response.status === 401) {
-          const refreshResponse = await fetch(`${API_URL}/auth/refresh-token`, {
-            method: 'POST',
-            credentials: 'include',
-          });
-
-          if (!refreshResponse.ok) {
-            clearOnFailure = refreshResponse.status === 400 || refreshResponse.status === 401;
-            throw new Error('Unable to refresh session');
-          }
-
-          response = await getSession();
+          response = await restoreExpiredSession();
         }
 
         if (!response.ok) {
@@ -99,15 +125,28 @@ export const UserProvider = ({ children }) => {
 
     const refreshInterval = window.setInterval(async () => {
       try {
-        const response = await fetch(`${API_URL}/auth/refresh-token`, {
-          method: 'POST',
-          credentials: 'include',
+        const response = await withRefreshLock(async () => {
+          if (wasRecentlyRefreshed()) {
+            return null;
+          }
+
+          const refreshResponse = await fetch(`${API_URL}/auth/refresh-token`, {
+            method: 'POST',
+            credentials: 'include',
+          });
+
+          if (refreshResponse.ok) {
+            localStorage.setItem(REFRESH_TIMESTAMP_KEY, String(Date.now()));
+          }
+
+          return refreshResponse;
         });
 
-        if (!response.ok) {
+        if (response && !response.ok) {
           if (!cancelled && (response.status === 400 || response.status === 401)) {
             setUser(null);
             localStorage.removeItem('currentUser');
+            localStorage.removeItem(REFRESH_TIMESTAMP_KEY);
           } else {
             console.error('Session renewal failed:', new Error(`Unexpected status ${response.status}`));
           }
@@ -115,7 +154,7 @@ export const UserProvider = ({ children }) => {
       } catch (error) {
         console.error('Session renewal failed:', error);
       }
-    }, 14 * 60 * 1000);
+    }, REFRESH_INTERVAL_MS);
 
     return () => {
       cancelled = true;

@@ -42,6 +42,7 @@ function NavBar() {
     // Clear frontend state and redirect
     setUser(null);
     localStorage.removeItem("currentUser");
+    localStorage.removeItem("evat-token-refreshed-at");
     navigate("/signin");
   };
 
