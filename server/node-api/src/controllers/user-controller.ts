@@ -112,6 +112,13 @@ export default class UserController {
         sameSite: 'lax' // adjust to strict in deployment (localhost only work with lax)
       });
 
+      res.cookie('refreshToken', data.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
+      });
+
       return res.status(200).json({
         message: "Login successful",
         data: {
@@ -125,11 +132,14 @@ export default class UserController {
 
   async logout(req: Request, res: Response): Promise<Response> {
     // Clear the secure cookie by matching the exact creation flags
-    res.clearCookie('token', {
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' // adjust to strict in deployment (localhost only work with lax)
-    });
+      sameSite: 'lax' as const
+    };
+
+    res.clearCookie('token', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
 
     return res.status(200).json({ message: "Logged out successfully" });
   }
@@ -142,7 +152,7 @@ export default class UserController {
    * @returns Returns the status code, a relevant message and a new AcessToken 
    */
   async refreshToken(req: Request, res: Response): Promise<Response> {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies?.refreshToken;
 
     if (!refreshToken) {
       return res.status(400).json({ message: "Refresh token is required" });
@@ -156,6 +166,13 @@ export default class UserController {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax' 
+      });
+
+      res.cookie('refreshToken', newRefreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 
       });
 
       return res.status(200).json({
