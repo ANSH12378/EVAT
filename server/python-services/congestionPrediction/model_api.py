@@ -135,6 +135,11 @@ async def startup_event():
     """Load model and initialize resources on startup"""
     global MODEL, VIC_HOLIDAYS, STATIONS_DF, STATION_STATS, STATION_RECENT_DATA
 
+    # Avoid loading the same resources twice when mounted in the combined service
+    if MODEL is not None:
+        logger.info("Congestion prediction model already initialized; skipping startup.")
+        return
+
     try:
         # Load RandomForest model
 
@@ -178,7 +183,10 @@ async def startup_event():
             STATION_STATS['_global_'] = global_stats
             logger.info(f"Station statistics computed as fallback")
         except Exception as e:
-            logger.warning(f"Could not load train_exogenous_3h.csv: {str(e)}. Using default values.")
+            logger.warning(
+                f"Could not load train_exogenous_3h.csv: {str(e)}. "
+                "Using deterministic baseline lag features."
+            )
             STATION_STATS = None
             STATION_RECENT_DATA = None
 
@@ -429,66 +437,76 @@ def get_lag_features_from_data(station_id: str, target_time: datetime) -> Dict:
     """
     lag_features = {}
 
-    # Try to get from recent historical data first
+    # Use the latest available historical record when runtime history exists
     if STATION_RECENT_DATA is not None and station_id in STATION_RECENT_DATA:
         station_data = STATION_RECENT_DATA[station_id]
 
-        # Sample randomly from recent data to get more varied predictions
-        # Use a weighted sample favoring recent records
-        sample_size = min(10, len(station_data))
-        sampled_data = station_data.sample(n=sample_size, replace=False)
+        if len(station_data) > 0:
+            latest = station_data.iloc[-1]
 
-        # Use mean with std variation for more realistic range
-        lag_features['arrivals_lag1'] = float(sampled_data['arrivals_lag1'].mean() +
-                                             np.random.normal(0, sampled_data['arrivals_lag1'].std() * 0.3))
-        lag_features['arrivals_lag2'] = float(sampled_data['arrivals_lag2'].mean() +
-                                             np.random.normal(0, sampled_data['arrivals_lag2'].std() * 0.3))
-        lag_features['arrivals_lag4'] = float(sampled_data['arrivals_lag4'].mean() +
-                                             np.random.normal(0, sampled_data['arrivals_lag4'].std() * 0.3))
-        lag_features['arrivals_ma4'] = float(sampled_data['arrivals_ma4'].mean() +
-                                            np.random.normal(0, sampled_data['arrivals_ma4'].std() * 0.2))
-        lag_features['arrivals_ma8'] = float(sampled_data['arrivals_ma8'].mean() +
-                                            np.random.normal(0, sampled_data['arrivals_ma8'].std() * 0.2))
-        lag_features['arrivals_pct_change'] = float(sampled_data['arrivals_pct_change'].mean())
-        lag_features['arrivals_diff'] = float(sampled_data['arrivals_diff'].mean())
-        lag_features['arrivals_ewma_4'] = float(sampled_data['arrivals_ewma_4'].mean() +
-                                               np.random.normal(0, sampled_data['arrivals_ewma_4'].std() * 0.2))
+            lag_features['arrivals_lag1'] = float(latest['arrivals_lag1'])
+            lag_features['arrivals_lag2'] = float(latest['arrivals_lag2'])
+            lag_features['arrivals_lag4'] = float(latest['arrivals_lag4'])
+            lag_features['arrivals_ma4'] = float(latest['arrivals_ma4'])
+            lag_features['arrivals_ma8'] = float(latest['arrivals_ma8'])
+            lag_features['arrivals_pct_change'] = float(latest['arrivals_pct_change'])
+            lag_features['arrivals_diff'] = float(latest['arrivals_diff'])
+            lag_features['arrivals_ewma_4'] = float(latest['arrivals_ewma_4'])
 
-        # Ensure non-negative values
-        for key in ['arrivals_lag1', 'arrivals_lag2', 'arrivals_lag4',
-                    'arrivals_ma4', 'arrivals_ma8', 'arrivals_ewma_4']:
-            lag_features[key] = max(0.0, lag_features[key])
+            return lag_features
 
-        logger.debug(f"Station {station_id}: lag1={lag_features['arrivals_lag1']:.2f}, "
-                    f"ma4={lag_features['arrivals_ma4']:.2f}")
+    # Use station/global statistics computed from historical data when available
+    if STATION_STATS is not None:
+        station_stats = STATION_STATS.get(
+            station_id,
+            STATION_STATS.get('_global_', {})
+        )
+
+        lag_features['arrivals_lag1'] = float(
+            station_stats.get('arrivals_lag1', 1.5)
+        )
+        lag_features['arrivals_lag2'] = float(
+            station_stats.get('arrivals_lag2', 1.5)
+        )
+        lag_features['arrivals_lag4'] = float(
+            station_stats.get('arrivals_lag4', 1.5)
+        )
+        lag_features['arrivals_ma4'] = float(
+            station_stats.get('arrivals_ma4', 1.5)
+        )
+        lag_features['arrivals_ma8'] = float(
+            station_stats.get('arrivals_ma8', 1.5)
+        )
+        lag_features['arrivals_pct_change'] = float(
+            station_stats.get('arrivals_pct_change', 0.0)
+        )
+        lag_features['arrivals_diff'] = float(
+            station_stats.get('arrivals_diff', 0.0)
+        )
+        lag_features['arrivals_ewma_4'] = float(
+            station_stats.get('arrivals_ewma_4', 1.5)
+        )
+
         return lag_features
 
-    # Fallback to station statistics with variation
-    if STATION_STATS is not None:
-        station_stats = STATION_STATS.get(station_id, STATION_STATS.get('_global_', {}))
-        # Add 20% random variation to avoid constant predictions
-        variation = np.random.uniform(0.8, 1.2)
-        lag_features['arrivals_lag1'] = station_stats.get('arrivals_lag1', 1.5) * variation
-        lag_features['arrivals_lag2'] = station_stats.get('arrivals_lag2', 1.5) * variation
-        lag_features['arrivals_lag4'] = station_stats.get('arrivals_lag4', 1.5) * variation
-        lag_features['arrivals_ma4'] = station_stats.get('arrivals_ma4', 1.5) * variation
-        lag_features['arrivals_ma8'] = station_stats.get('arrivals_ma8', 1.5) * variation
-        lag_features['arrivals_pct_change'] = station_stats.get('arrivals_pct_change', 0.0)
-        lag_features['arrivals_diff'] = station_stats.get('arrivals_diff', 0.0)
-        lag_features['arrivals_ewma_4'] = station_stats.get('arrivals_ewma_4', 1.5) * variation
-    else:
-        # Ultimate fallback with wider range for diversity
-        base_val = np.random.uniform(0.5, 4.0)
-        lag_features['arrivals_lag1'] = base_val
-        lag_features['arrivals_lag2'] = base_val * np.random.uniform(0.7, 1.4)
-        lag_features['arrivals_lag4'] = base_val * np.random.uniform(0.6, 1.5)
-        lag_features['arrivals_ma4'] = base_val * np.random.uniform(0.8, 1.3)
-        lag_features['arrivals_ma8'] = base_val * np.random.uniform(0.85, 1.2)
-        lag_features['arrivals_pct_change'] = np.random.uniform(-0.3, 0.3)
-        lag_features['arrivals_diff'] = np.random.uniform(-1.0, 1.0)
-        lag_features['arrivals_ewma_4'] = base_val * np.random.uniform(0.9, 1.1)
+    # Deterministic runtime fallback when historical data is unavailable.
+    # This avoids generating different predictions for identical requests.
+    logger.warning(
+        f"No arrival history available for station {station_id}; "
+        "using deterministic baseline lag features."
+    )
 
-    return lag_features
+    return {
+        'arrivals_lag1': 1.5,
+        'arrivals_lag2': 1.5,
+        'arrivals_lag4': 1.5,
+        'arrivals_ma4': 1.5,
+        'arrivals_ma8': 1.5,
+        'arrivals_pct_change': 0.0,
+        'arrivals_diff': 0.0,
+        'arrivals_ewma_4': 1.5
+    }
+
 
 
 def engineer_features(
@@ -598,10 +616,7 @@ async def predict_single(request: PredictionRequest):
     """
     Predict congestion for a single station
 
-    Args:Update station history with this prediction
-            update_station_history(station_id, float(prediction))
-
-            #
+    Args:
         request: Prediction request with station_id
 
     Returns:

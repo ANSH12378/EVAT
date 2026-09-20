@@ -29,6 +29,9 @@ async def lifespan(app: FastAPI):
     print("[startup] Loading reliability scoring data...")
     reliability_scoring.initialize()
 
+    print("[startup] Loading congestion prediction model...")
+    await congestion_prediction.startup_event()
+
     print("[startup] Models ready.")
     yield
 
