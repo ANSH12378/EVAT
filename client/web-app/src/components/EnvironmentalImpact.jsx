@@ -501,9 +501,7 @@ export default function EnvironmentalImpact({
       if (!user) return;
 
       fetch(`${API_URL}/ice-vehicle`, {
-        headers: {
-          credentials: "include",
-        },
+        credentials: "include",
       })
         .then((res) => {
           if (!res.ok)

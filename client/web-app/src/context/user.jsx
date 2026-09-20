@@ -85,7 +85,7 @@ export const UserProvider = ({ children }) => {
         }
 
         if (!response.ok) {
-          clearOnFailure = response.status === 400 || response.status === 401;
+          clearOnFailure = response.status === 400 || response.status === 401 || response.status === 404;
           throw new Error('Session expired');
         }
 

@@ -3,6 +3,13 @@ import UserService from "../services/user-service";
 import { UserItemResponse } from "../dtos/user-item-response";
 import jwt from "jsonwebtoken";
 
+const configuredSameSite = process.env.COOKIE_SAME_SITE?.toLowerCase();
+const cookieSameSite: 'lax' | 'strict' | 'none' =
+  configuredSameSite === 'none' || configuredSameSite === 'strict'
+    ? configuredSameSite
+    : 'lax';
+const cookieSecure = process.env.NODE_ENV === 'production' || cookieSameSite === 'none';
+
 interface JwtPayload {
     id: string;
     email?: string;
@@ -102,14 +109,14 @@ export default class UserController {
 
       res.cookie('token', data.accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax' // adjust to strict in deployment (localhost only work with lax)
+        secure: cookieSecure,
+        sameSite: cookieSameSite
       });
 
       res.cookie('refreshToken', data.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: cookieSecure,
+        sameSite: cookieSameSite,
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
       });
 
@@ -128,8 +135,8 @@ export default class UserController {
     // Clear the secure cookie by matching the exact creation flags
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const
+      secure: cookieSecure,
+      sameSite: cookieSameSite
     };
 
     res.clearCookie('token', cookieOptions);
@@ -158,14 +165,14 @@ export default class UserController {
 
       res.cookie('token', accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax' 
+        secure: cookieSecure,
+        sameSite: cookieSameSite
       });
 
       res.cookie('refreshToken', newRefreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: cookieSecure,
+        sameSite: cookieSameSite,
         maxAge: 7 * 24 * 60 * 60 * 1000 
       });
 
