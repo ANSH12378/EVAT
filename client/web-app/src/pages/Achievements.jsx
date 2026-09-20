@@ -30,6 +30,7 @@ function Achievements() {
     user: contextUser,
     setUser: setContextUser,
     updateUser: updateContextUser,
+    authReady,
   } = useContext(UserContext);
 
   const [userStats, setUserStats] = useState(null);
@@ -201,12 +202,16 @@ function Achievements() {
 
     // Fetch both user stats and achievements
     useEffect(() => {
+        if (!authReady) {
+            return;
+        }
+
         if (!contextUser) {
             navigate("/signin");
             return;
         }
         fetchData();
-    }, [contextUser, navigate]);
+    }, [authReady, contextUser, navigate]);
 
     if (loading) return <div className="loading">Loading achievements...</div>;
 

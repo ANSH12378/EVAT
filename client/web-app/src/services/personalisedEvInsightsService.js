@@ -55,8 +55,7 @@ export const getMyInsights = async () => {
     try {
     const response = await fetch(`${baseUrl}/latest`, {
       method: 'GET',
-      headers: {
-      },
+      credentials: 'include',
     });
 
     if (!response.ok) {

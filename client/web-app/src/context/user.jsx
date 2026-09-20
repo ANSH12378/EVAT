@@ -3,15 +3,16 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 export const UserContext = createContext({
   user: null,
+  authReady: false,
   setUser: () => null,
   updateUser: () => null,
 });
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    let refreshInterval;
     let cancelled = false;
 
     const clearSession = () => {
@@ -26,24 +27,6 @@ export const UserProvider = ({ children }) => {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
     });
-
-    const renewSession = async () => {
-      const response = await fetch(`${API_URL}/auth/refresh-token`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Unable to refresh session');
-      }
-    };
-
-    const handleRenewalFailure = () => {
-      if (refreshInterval) {
-        window.clearInterval(refreshInterval);
-      }
-      clearSession();
-    };
 
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
@@ -60,7 +43,15 @@ export const UserProvider = ({ children }) => {
         let response = await getSession();
 
         if (response.status === 401) {
-          await renewSession();
+          const refreshResponse = await fetch(`${API_URL}/auth/refresh-token`, {
+            method: 'POST',
+            credentials: 'include',
+          });
+
+          if (!refreshResponse.ok) {
+            throw new Error('Unable to refresh session');
+          }
+
           response = await getSession();
         }
 
@@ -75,13 +66,14 @@ export const UserProvider = ({ children }) => {
 
         if (!cancelled) {
           setUser(previousUser => ({ ...previousUser, ...data.data.user }));
-          refreshInterval = window.setInterval(() => {
-            renewSession().catch(handleRenewalFailure);
-          }, 14 * 60 * 1000);
         }
       } catch (error) {
         console.error('Silent auth check failed:', error);
         clearSession();
+      } finally {
+        if (!cancelled) {
+          setAuthReady(true);
+        }
       }
     };
 
@@ -89,11 +81,40 @@ export const UserProvider = ({ children }) => {
 
     return () => {
       cancelled = true;
-      if (refreshInterval) {
-        window.clearInterval(refreshInterval);
-      }
     };
   }, []);
+
+  useEffect(() => {
+    if (!authReady || !user) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const refreshInterval = window.setInterval(async () => {
+      try {
+        const response = await fetch(`${API_URL}/auth/refresh-token`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error('Unable to refresh session');
+        }
+      } catch (error) {
+        console.error('Session renewal failed:', error);
+        if (!cancelled) {
+          setUser(null);
+          localStorage.removeItem('currentUser');
+        }
+      }
+    }, 14 * 60 * 1000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(refreshInterval);
+    };
+  }, [authReady, user]);
 
   // Save user to localStorage whenever it changes
   useEffect(() => {
@@ -134,7 +155,7 @@ export const UserProvider = ({ children }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, updateUser }}>
+    <UserContext.Provider value={{ user, authReady, setUser, updateUser }}>
       {children}
     </UserContext.Provider>
   );

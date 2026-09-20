@@ -1,21 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "../context/user";
 import NavBar from "../components/NavBar";
 import profileImage from "../assets/game-car.png";
 import ChatBubble from "../components/ChatBubble";
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+
 function Game() {
   const navigate = useNavigate();
 
-  const { user } = useContext(UserContext);
+  const { user, authReady } = useContext(UserContext);
   const [gameProfile, setGameProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [loginMessage, setLoginMessage] = useState("");
 
   useEffect(() => {
+    if (!authReady) {
+      return;
+    }
+
     if (!user) {
       navigate("/signin");
       return;
@@ -42,7 +49,7 @@ function Game() {
     };
 
     fetchProfile();
-  }, [user, navigate]);
+  }, [authReady, user, navigate]);
 
   const refreshProfile = async () => {
     try {

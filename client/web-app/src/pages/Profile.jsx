@@ -57,6 +57,7 @@ function Profile() {
     user: contextUser,
     setUser: setContextUser,
     updateUser: updateContextUser,
+    authReady,
   } = useContext(UserContext);
 
   const [localUser, setLocalUser] = useState(null);
@@ -134,7 +135,11 @@ function Profile() {
   }, [isPaymentSuccess]);
 
   useEffect(() => {
-    if (!user) {
+    if (!authReady) {
+      return;
+    }
+
+    if (!contextUser) {
       navigate("/signin");
       return;
     }
@@ -209,16 +214,16 @@ function Profile() {
     };
 
     fetchUserProfile();
-  }, [navigate]);
+  }, [authReady, navigate]);
 
   useEffect(() => {
-    if (user) {
+    if (contextUser) {
       fetchUserStats();
     }
-  }, [user]);
+  }, [contextUser]);
 
   const fetchUserStats = async () => {
-    if (!user) return;
+    if (!contextUser) return;
 
     try {
       setStatsLoading(true);
@@ -242,14 +247,14 @@ function Profile() {
   };
 
   useEffect(() => {
-    if (user) {
+    if (contextUser) {
       fetchRecentAchievements();
     }
-  }, [user]);
+  }, [contextUser]);
   
   // Fetch recent achievements
   const fetchRecentAchievements = async () => {
-    if (!user) return;
+    if (!contextUser) return;
 
     try {
       setAchievementsLoading(true);
@@ -348,6 +353,7 @@ function Profile() {
     try {
         await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
     } catch(err) { console.error(err); }
+    setContextUser(null);
     localStorage.removeItem("currentUser");
     navigate("/signin");
   };

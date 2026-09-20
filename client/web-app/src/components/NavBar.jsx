@@ -21,7 +21,7 @@ function NavBar() {
 
   const isDev = import.meta.env.DEV;
 
-  const { user } = useContext(UserContext);
+  const { user, setUser } = useContext(UserContext);
   const { theme, toggleTheme } = useTheme();
 
   const isActive = (path) => location.pathname === path;
@@ -40,6 +40,7 @@ function NavBar() {
     }
         
     // Clear frontend state and redirect
+    setUser(null);
     localStorage.removeItem("currentUser");
     navigate("/signin");
   };
