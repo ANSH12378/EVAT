@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useContext, useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { toast } from "react-toastify";
@@ -6,6 +6,7 @@ import ErrorMessage from "../components/ErrorMessage";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { Textarea } from "./Textarea";
+import { UserContext } from "../context/user";
 
 const API_URL = import.meta.env.VITE_API_URL
 const BOOKING_ENDPOINT = `${API_URL}/bookings`;
@@ -13,7 +14,7 @@ const NOTES_MAX_LENGTH = 100;   // this should be changed to match the character
 const RECENT_BOOKING_THRESHOLD_SECONDS = 5;
 
 export default function SidebarBookingTool({ stationName = "Unknown Station" }) {
-  const [user, setUser] = useState(null);
+  const { user } = useContext(UserContext);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [vehicle, setVehicle] = useState("");
@@ -22,20 +23,6 @@ export default function SidebarBookingTool({ stationName = "Unknown Station" }) 
   const [submitting, setSubmitting] = useState(false);
   const [recentBookingWarning, setRecentBookingWarning] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-
-  useEffect(() => {
-    // load current user
-    const u = localStorage.getItem("currentUser");
-    if (u) {
-      try {
-        setUser(JSON.parse(u));
-      } catch {
-        setUser(null);
-      }
-    } else {
-      setUser(null);
-    }
-  }, []);
 
   // auto-clear the warning after 30 seconds so it doesn't linger forever
   useEffect(() => {
@@ -122,6 +109,7 @@ export default function SidebarBookingTool({ stationName = "Unknown Station" }) 
     try {
       const res = await fetch(BOOKING_ENDPOINT, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "x-user-id": String(userId),

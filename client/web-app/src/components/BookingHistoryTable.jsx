@@ -4,7 +4,8 @@
 // limit bookings to be seen based on amount/time,
 // link station names to details.
 
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
+import { UserContext } from "../context/user";
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -13,23 +14,14 @@ export default function BookingHistoryTable() {
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState("");
 
-  const getUserId = () => {
-    const raw = localStorage.getItem("currentUser");
-    if (!raw) return null;
-    try {
-      const u = JSON.parse(raw);
-      return u?.id || u?._id || null;
-    } catch {
-      return null;
-    }
-  };
-
+  const { user } = useContext(UserContext);
+  const userId = user?.id || user?._id || null;
+  
   async function fetchBookings() {
     setLoading(true);
     setError("");
 
     try {
-      const userId = getUserId();
       if (!userId) {
         setBookings([]);
         setError("Please sign in to view your bookings.");

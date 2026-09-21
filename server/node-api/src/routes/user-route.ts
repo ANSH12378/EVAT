@@ -101,28 +101,26 @@ router.post("/register", (req, res) => userController.register(req, res));
  * @swagger
  * /api/auth/jwt-login:
  *   post:
- *     summary: Automatic login with Access & Refresh Tokens
+ *     summary: Automatic login with an access-token cookie
  *     description: >
- *       This endpoint attempts to log the user in automatically using their tokens.  
+ *       This endpoint verifies the HttpOnly access-token cookie and returns the current user.
  * 
- *       - If the access token is still valid, the user is logged in directly.  
- *       - If the access token is expired but the refresh token is still valid, a new access token is issued and the user is logged in.  
- *       - If both tokens are expired or invalid, the user must log in again.  
- *       
+ *       If the access token has expired, call `/api/auth/refresh-token` and retry this request.
+ *
  *       In all successful cases, the user's `lastLogin` timestamp is updated.
  *     tags:
  *       - Authentication
  *     parameters:
  *       - in: header
  *         name: Authorization
- *         description: Bearer access token in the format `Bearer {token}`
- *         required: true
+ *         description: Optional Bearer access token in the format `Bearer {token}` when cookies are unavailable
+ *         required: false
  *         schema:
  *           type: string
  *           example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *     responses:
  *       200:
- *         description: Automatic login successful (either access token still valid, or new one issued)
+ *         description: Automatic login successful
  *         content:
  *           application/json:
  *             schema:
@@ -137,16 +135,8 @@ router.post("/register", (req, res) => userController.register(req, res));
  *                     user:
  *                       type: object
  *                       description: User object
- *                     accessToken:
- *                       type: string
- *                       description: New access token (if one was issued)
- *                       example: "eyJhbGciOiJIUzI1NiIs..."
- *                     refreshToken:
- *                       type: string
- *                       description: Newly rotated refresh token (if the access token was renewed)
- *                       example: "eyJhbGciOiJIUzI1NiIs..."
  *       401:
- *         description: Missing, invalid, or expired refresh token (login required)
+ *         description: Missing, invalid, or expired access token
  *         content:
  *           application/json:
  *             schema:
@@ -154,9 +144,9 @@ router.post("/register", (req, res) => userController.register(req, res));
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Refresh token expired, please log in again"
+ *                   example: "Invalid or expired token. Please refresh."
  *       404:
- *         description: User not found or refresh token missing
+ *         description: User not found
  *         content:
  *           application/json:
  *             schema:
@@ -203,11 +193,8 @@ router.post("/jwt-login", (req, res) => userController.jwtLogin(req, res));
  *                 data:
  *                   type: object
  *                   properties:
- *                     accessToken:
- *                       type: string
- *                     refreshToken:
- *                       type: string
- *                       description: Newly rotated refresh token
+ *                     user:
+ *                       $ref: '#/components/schemas/UserItemResponse'
  *       401:
  *         description: Invalid credentials
  *         content:
@@ -222,25 +209,29 @@ router.post("/login", (req, res) => userController.login(req, res));
 
 /**
  * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: Logout
+ *     description: Destroys the secure HttpOnly cookie to log the user out securely.
+ *     responses:
+ *       200:
+ *         description: Successfully logged out
+ */
+router.post("/logout", (req, res) => userController.logout(req, res));
+
+/**
+ * @swagger
  * /api/auth/refresh-token:
  *   post:
  *     tags:
  *       - Authentication
- *     summary: Refresh Access Token
- *     description: Get a new access token using refresh token
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               refreshToken:
- *                 type: string
- *                 example: "eyJhbGciOiJIUzI1NiIs..."
+ *     summary: Refresh access-token cookie
+ *     description: Rotates the HttpOnly access and refresh token cookies using the refresh-token cookie.
  *     responses:
  *       200:
- *         description: Successfully refreshed token
+ *         description: Tokens refreshed successfully
  *         content:
  *           application/json:
  *             schema:
@@ -249,11 +240,8 @@ router.post("/login", (req, res) => userController.login(req, res));
  *                 message:
  *                   type: string
  *                   example: "Token refreshed successfully"
- *                 data:
- *                   type: object
- *                   properties:
- *                     accessToken:
- *                       type: string
+ *       400:
+ *         description: Refresh token cookie is missing
  *       401:
  *         description: Invalid refresh token
  *         content:

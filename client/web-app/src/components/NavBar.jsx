@@ -21,14 +21,29 @@ function NavBar() {
 
   const isDev = import.meta.env.DEV;
 
-  const { user } = useContext(UserContext);
+  const { user, setUser } = useContext(UserContext);
   const { theme, toggleTheme } = useTheme();
 
   const isActive = (path) => location.pathname === path;
 
-  const handleSignOut = () => {
-    localStorage.removeItem('currentUser');
-    navigate('/signin');
+  // Handle Sign out
+  const handleSignOut = async () => {
+    try {
+      // Hit the backend to destroy the secure cookie
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+      await fetch(`${API_URL}/auth/logout`, { 
+        method: 'POST', 
+        credentials: 'include' 
+      });
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+        
+    // Clear frontend state and redirect
+    setUser(null);
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("evat-token-refreshed-at");
+    navigate("/signin");
   };
 
   const toggleMainMenu = () => {

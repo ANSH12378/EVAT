@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useContext, useState, useEffect } from "react";
 import DOMPurify from "dompurify";
 import { toast } from "react-toastify";
 import { Mail, User } from 'lucide-react';
 import ErrorMessage from '../components/ErrorMessage'
 import SuccessMessage from '../components/SuccessMessage'
 import { submitSupportRequest } from "../services/supportRequestService";
+import { UserContext } from "../context/user";
 
 const API_URL = import.meta.env.VITE_API_URL;
 const SUPPORT_ENDPOINT = `${API_URL}/support-requests`;
@@ -25,24 +26,9 @@ export default function SupportRequestForm() {
   const [isIssueEmpty, setIsIssueEmpty] = useState(false);
   const [isDescriptionEmpty, setIsDescriptionEmpty] = useState(false);
   const [recentSuccess, setRecentSuccess] = useState(false);
+  const { user } = useContext(UserContext);
+  const userId = user?.id || user?._id || null;
 
-  useEffect(() => {
-    const raw = localStorage.getItem("currentUser");
-    if (!raw) return;
-
-    try {
-      const u = JSON.parse(raw);
-      const name = [u?.firstName, u?.lastName]
-        .filter(Boolean)
-        .join(" ")
-        .trim();
-
-      setName(name);
-      setEmail(u?.email);
-    } catch {
-      /* ignore */
-    }
-  }, []);
 
   useEffect(() => {
     if (recentSuccess) {
@@ -79,18 +65,7 @@ export default function SupportRequestForm() {
     }
   };
 
-  const getUserId = () => {
-    const raw = localStorage.getItem("currentUser");
 
-    if (!raw) return null;
-
-    try {
-      const u = JSON.parse(raw);
-      return u?.id || u?._id || null;
-    } catch {
-      return null;
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -101,8 +76,6 @@ export default function SupportRequestForm() {
 
     //const sanitizedDescription = DOMPurify.sanitize(description);
     //console.log(`Input: ${description}, Sanitised: ${sanitizedDescription}`)
-
-    const userId = getUserId();
 
     if (!userId) {
       setError("Please sign in first.");

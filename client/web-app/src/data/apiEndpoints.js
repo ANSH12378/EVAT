@@ -206,12 +206,6 @@ const templates = {
   "password": "string"
 }`,
 
-  // refresh token
-  refreshToken: 
-`{
-  "refreshToken": "string"
-}`,
-
   // update user
   userUpdate: 
 `{
@@ -363,7 +357,7 @@ const supportRequest = [
 const user = [
   { method: 'POST',   endpoint: '/auth/register',                 label: 'Register new user',                     body: templates.userRegister },   // tested and working
   { method: 'POST',   endpoint: '/auth/login',                    label: 'Login',                                 body: templates.userLogin },      // tested and working
-  { method: 'POST',   endpoint: '/auth/refresh-token',            label: 'Refresh access token',                  body: templates.refreshToken },   // NOT WORKING - no idea
+  { method: 'POST',   endpoint: '/auth/refresh-token',            label: 'Refresh access token' },
   { method: 'GET',    endpoint: '/auth/profile',                  label: 'Get user profile' },                                                      // tested and working
   { method: 'PUT',    endpoint: '/auth/profile',                  label: 'Update user profile',                   body: templates.userUpdate },     // tested and working
   { method: 'GET',    endpoint: '/auth/user-list',                label: '[Admin] Get all users' },                                                 // tested and working
