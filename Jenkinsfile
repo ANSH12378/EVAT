@@ -37,6 +37,13 @@ pipeline {
                 }
             }
         }
+
+        stage('Security') {
+            steps {
+                bat 'echo Running production dependency security audit...'
+                bat 'npm audit --omit=dev --audit-level=high'
+            }
+        }
     }
 
     post {
