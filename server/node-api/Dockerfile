@@ -5,7 +5,7 @@
 # ---------------------------------------------------------------------------
 
 # ------------------------------- build stage -------------------------------
-FROM node:18-alpine AS build
+FROM node:24-alpine AS build
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ WORKDIR /app
 # `tsc`, ts-node and the @types/* packages live in devDependencies, so
 # `npm install --production` here would make `npm run build` fail.
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 # Copy only what TypeScript needs to compile (see .dockerignore).
 COPY tsconfig.json ./
@@ -25,14 +25,14 @@ COPY src ./src
 RUN npm run build && ls -la /app/server.js
 
 # ------------------------------ runtime stage ------------------------------
-FROM node:18-alpine AS runtime
+FROM node:24-alpine AS runtime
 
 ENV NODE_ENV=production
 WORKDIR /app
 
 # Production dependencies only - no compiler, no @types in the final image.
 COPY package*.json ./
-RUN npm install --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Compiled entrypoint + compiled sources.
 # The .ts files under src/ are copied too because swagger-jsdoc reads
