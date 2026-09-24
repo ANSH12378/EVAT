@@ -18,7 +18,7 @@ pipeline {
         stage('Test') {
             steps {
                 bat 'echo Running EVAT automated server tests...'
-                bat 'npm run test:server -- --runInBand'
+                bat 'npm run test:server -- -- --runInBand'
             }
         }
     }
