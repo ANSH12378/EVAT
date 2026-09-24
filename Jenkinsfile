@@ -14,6 +14,13 @@ pipeline {
                 bat 'npm run build:server'
             }
         }
+
+        stage('Test') {
+            steps {
+                bat 'echo Running EVAT automated server tests...'
+                bat 'npm run test:server'
+            }
+        }
     }
 
     post {
