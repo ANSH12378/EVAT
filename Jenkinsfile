@@ -21,6 +21,17 @@ pipeline {
                 bat 'npm run test:server -- -- --runInBand'
             }
         }
+
+        stage('Code Quality') {
+            steps {
+                script {
+                    def scannerHome = tool 'SonarScanner'
+                    withSonarQubeEnv('SonarQube') {
+                        bat "\"${scannerHome}\\bin\\sonar-scanner.bat\" -Dsonar.projectKey=EVAT -Dsonar.projectName=EVAT -Dsonar.sources=server/node-api/src -Dsonar.tests=server/node-api/test -Dsonar.test.inclusions=server/node-api/test/**/*.test.ts -Dsonar.exclusions=**/node_modules/**,**/*.js"
+                    }
+                }
+            }
+        }
     }
 
     post {
