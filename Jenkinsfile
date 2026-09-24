@@ -27,7 +27,7 @@ pipeline {
                 script {
                     def scannerHome = tool 'SonarScanner'
                     withSonarQubeEnv('SonarQube') {
-                        bat "\"${scannerHome}\\bin\\sonar-scanner.bat\" -Dsonar.projectKey=EVAT -Dsonar.projectName=EVAT -Dsonar.sources=server/node-api/src -Dsonar.tests=server/node-api/test -Dsonar.test.inclusions=server/node-api/test/**/*.test.ts -Dsonar.exclusions=**/node_modules/**,**/*.js"
+                        bat "\"${scannerHome}\\bin\\sonar-scanner.bat\" -Dsonar.projectKey=EVAT -Dsonar.projectName=EVAT -Dsonar.sources=server/node-api/src -Dsonar.tests=server/node-api/test -Dsonar.test.inclusions=server/node-api/test/**/*.test.ts -Dsonar.exclusions=**/node_modules/**,**/*.js -Dsonar.typescript.tsconfigPath=server/node-api/tsconfig.json"
                     }
                 }
             }
