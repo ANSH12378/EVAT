@@ -12,7 +12,6 @@ pipeline {
                 bat 'echo Building EVAT server...'
                 bat 'npm ci'
                 bat 'npm run build:server'
-                bat 'docker build -t evat-api:%BUILD_NUMBER% server\\node-api'
             }
         }
 
@@ -43,6 +42,8 @@ pipeline {
             steps {
                 bat 'echo Running production dependency security audit...'
                 bat 'npm audit --omit=dev --audit-level=high'
+                bat 'echo Packaging approved build as evat-api:%BUILD_NUMBER%...'
+                bat 'docker build -t evat-api:%BUILD_NUMBER% server\\node-api'
             }
         }
     }
