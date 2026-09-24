@@ -12,6 +12,7 @@ pipeline {
                 bat 'echo Building EVAT server...'
                 bat 'npm ci'
                 bat 'npm run build:server'
+                bat 'docker build -t evat-api:%BUILD_NUMBER% server\\node-api'
             }
         }
 
