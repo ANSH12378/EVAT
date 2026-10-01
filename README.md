@@ -1,4 +1,4 @@
-# ⚡ EVAT (Electric Vehicle Adoption Tool)
+# EVAT (Electric Vehicle Adoption Tool)
 
 **Company:** Chameleon  
 **Project:** EV Adoption Tools  
@@ -8,7 +8,7 @@ This repository is a **Monorepo** containing the Vite + React frontend web appli
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 **Frontend (Client):** Vite, React, Chart.js, Leaflet  
 **Backend (Server):** Node.js, TypeScript, Express.js, MongoDB, JWT, Nodemailer  
@@ -16,7 +16,7 @@ This repository is a **Monorepo** containing the Vite + React frontend web appli
 
 ---
 
-## 📦 Prerequisites
+##  Prerequisites
 
 Before you begin, ensure you have the following installed:
 
@@ -26,7 +26,7 @@ Before you begin, ensure you have the following installed:
 
 ---
 
-## ⚙️ Environment Variables
+##  Environment Variables
 
 Since this is a monorepo, you need to manage **multiple `.env`** files.
 
@@ -92,7 +92,7 @@ RELIABILITY_API_URL = "http://127.0.0.1:5000/reliability"
 
 ---
 
-## 🚀 Installation & Running Locally
+## Installation & Running Locally
 
 Because we use NPM workspaces, you do not need to navigate into individual folders to install packages.
 
@@ -146,7 +146,7 @@ Because we use NPM workspaces, you do not need to navigate into individual folde
 
 ---
 
-## 🐳 Running the whole stack with Docker
+##  Running the whole stack with Docker
 
 The repo ships a Compose stack (`web` + `api` + `pythonsvc`) so the app can be
 run without installing Node or Python locally. MongoDB is not included — the API
@@ -271,7 +271,7 @@ This flow is useful when you want to pull the backend and Python services from a
 
 ---
 
-## 🔑 Authentication & API Setup
+##  Authentication & API Setup
 
 ### Google Maps & AI
 
@@ -297,7 +297,7 @@ This flow is useful when you want to pull the backend and Python services from a
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 Backend testing is implemented using Jest. Python testing is implemented using pytest.
 
@@ -325,7 +325,7 @@ npm run test:python
 
 ---
 
-## 📚 Machine Learning Deployment
+##  Machine Learning Deployment
 
 For local Python setup, model training support, service deployment, Docker usage, verification, and troubleshooting, see the [Machine Learning Deployment Guide](docs/MACHINE_LEARNING_DEPLOYMENT_GUIDE.md).
 
@@ -337,6 +337,6 @@ For the explainable EV readiness score and recommendation introduced by task 013
 
 ---
 
-## 🚧 Known Issues / Fixes Required
+##  Known Issues / Fixes Required
 
 Invalid Token Error: An invalid token error is currently occurring when performing GET /api/vehicle, even though the Bearer token appears correct when checked in the code. Needs investigation.
